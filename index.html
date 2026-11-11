@@ -1,0 +1,3521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parametric 3D Studio - Anycubic Kobra X</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Alfa+Slab+One&family=Alex+Brush&family=Allura&family=Anton&family=Bad+Script&family=Bangers&family=Bebas+Neue&family=Caveat:wght@700&family=Cinzel:wght@900&family=Cookie&family=Dancing+Script:wght@700&family=Fredoka:wght@600;700&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Kaushan+Script&family=Lobster&family=Marck+Script&family=Merriweather:wght@900&family=Montserrat:wght@900&family=Oswald:wght@700&family=Pacifico&family=Parisienne&family=Playfair+Display:wght@900&family=Poppins:wght@800;900&family=Righteous&family=Roboto+Slab:wght@800;900&family=Sacramento&family=Satisfy&family=Tangerine:wght@700&family=Yellowtail&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Three.js + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- SVGLoader oficial do Three.js para converter caminhos vetoriais com furos e orientação perfeita -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/SVGLoader.js"></script>
+  <!-- OpenType.js Oficial para leitura matemática de vetores TTF/OTF sem rasterização -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+  <!-- ClipperLib para Operações Booleanas 2D Exatas (União, Diferença da Cava e Offset de Tolerância) -->
+  <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      outline: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased h-screen w-screen flex flex-col overflow-hidden select-none">
+
+  <!-- Header / Top Bar -->
+  <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between flex-wrap gap-2 flex-shrink-0 z-30 shadow-md">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-900/30">
+        <i class="fa-solid fa-cube text-sm"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-sm leading-tight text-white flex items-center gap-2">
+          Parametric 3D Studio <span id="headerPrinterBadge" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Anycubic Kobra X</span>
+        </h1>
+        <p id="headerPrinterSub" class="text-[10px] text-slate-400">Mesa PEI 260 × 260 mm • Bico 0.4 mm</p>
+      </div>
+    </div>
+
+    <!-- Quick Actions Bar -->
+    <div class="flex items-center flex-wrap gap-1.5">
+      <!-- Botões Desfazer / Refazer Sempre Visíveis e Destacados -->
+      <div class="bg-slate-950 p-1 rounded-xl border border-amber-500/40 flex items-center gap-1 text-xs shadow-inner">
+        <button id="btnUndo" onclick="undoAction()" disabled class="px-2.5 py-1 rounded-lg font-bold text-amber-300 bg-slate-900 hover:bg-slate-800 disabled:opacity-35 disabled:pointer-events-none transition flex items-center gap-1.5" title="Desfazer alteração (Ctrl+Z)">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Desfazer</span>
+        </button>
+        <button id="btnRedo" onclick="redoAction()" disabled class="px-2.5 py-1 rounded-lg font-bold text-amber-300 bg-slate-900 hover:bg-slate-800 disabled:opacity-35 disabled:pointer-events-none transition flex items-center gap-1.5" title="Refazer alteração (Ctrl+Y)">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>Refazer</span>
+        </button>
+      </div>
+
+      <!-- Seletor de Modo de Visualização -->
+      <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center text-xs shadow-inner">
+        <button id="btnViewAssemble" onclick="setViewMode('assemble')" class="px-2.5 py-1 rounded-lg font-bold text-white bg-amber-600 transition shadow-sm">
+          Assemble View
+        </button>
+        <button id="btnViewPlate1" onclick="setViewMode('plate1')" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition">
+          Placa 1 (Base)
+        </button>
+        <button id="btnViewPlate2" onclick="setViewMode('plate2')" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition">
+          Placa 2 (Nome/Apliques)
+        </button>
+        <button id="btnViewPlate3" onclick="setViewMode('plate3')" class="hidden px-2.5 py-1 rounded-lg font-medium text-amber-300 hover:text-white transition">
+          Placa 3 (Internos)
+        </button>
+      </div>
+
+      <!-- Exportadores STL -->
+      <button onclick="exportSTL(1)" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-900/30 transition">
+        <i class="fa-solid fa-download"></i>
+        <span>STL Base (Chapa 1)</span>
+      </button>
+
+      <button onclick="exportSTL(2)" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-900/30 transition">
+        <i class="fa-solid fa-shapes"></i>
+        <span>STL Nome (Chapa 2)</span>
+      </button>
+
+      <button id="btnExportSTL3" onclick="exportSTL(3)" class="hidden px-2.5 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-amber-900/30 transition">
+        <i class="fa-solid fa-puzzle-piece"></i>
+        <span>STL Internos (Chapa 3)</span>
+      </button>
+
+      <!-- Exportar Script OpenSCAD -->
+      <button onclick="exportSCAD()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 border border-teal-500/30 rounded-xl text-xs font-semibold flex items-center gap-1 transition" title="Exportar script .scad para OpenSCAD / MakerWorld">
+        <i class="fa-solid fa-code"></i>
+        <span>.SCAD</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT SIDEBAR: Personalização Completa -->
+    <aside class="w-[360px] lg:w-[380px] bg-slate-900/95 border-r border-slate-800 flex flex-col h-full overflow-y-auto custom-scrollbar p-3.5 space-y-3.5 flex-shrink-0 z-20">
+
+      <!-- Seletor de Perfil de Impressora -->
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2 shadow-inner">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Perfil de Impressora</span>
+          </div>
+          <div id="sidebarBedDimBadge" class="text-[11px] font-mono bg-slate-800/80 px-2 py-0.5 rounded text-amber-400 border border-slate-700">
+            260×260 mm
+          </div>
+        </div>
+        <select id="printerProfileSelect" onchange="updatePrinterProfile(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
+          <option value="kobra_x" selected>Anycubic Kobra X / S (260 × 260 mm)</option>
+          <option value="bambu_a1">Bambu Lab A1 / P1S / X1C (256 × 256 mm)</option>
+          <option value="ender_v3_ke">Creality Ender-3 V3 KE (220 × 220 mm)</option>
+        </select>
+      </div>
+
+      <!-- Paletas de Cores -->
+      <section class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-palette text-amber-500"></i> Paletas de Filamento
+          </span>
+        </div>
+        
+        <div class="grid grid-cols-4 gap-1.5">
+          <button onclick="applyPalette('#5c3826', '#dfc4a2')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
+            <div class="flex w-full h-3 rounded overflow-hidden">
+              <span class="w-1/2 h-full bg-[#5c3826]"></span>
+              <span class="w-1/2 h-full bg-[#dfc4a2]"></span>
+            </div>
+            <span class="text-[9px] text-slate-400 font-medium">Terroso</span>
+          </button>
+          <button onclick="applyPalette('#9a6237', '#f4ebe1')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
+            <div class="flex w-full h-3 rounded overflow-hidden">
+              <span class="w-1/2 h-full bg-[#9a6237]"></span>
+              <span class="w-1/2 h-full bg-[#f4ebe1]"></span>
+            </div>
+            <span class="text-[9px] text-slate-400 font-medium">Caramelo</span>
+          </button>
+          <button onclick="applyPalette('#f472b6', '#ffffff')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
+            <div class="flex w-full h-3 rounded overflow-hidden">
+              <span class="w-1/2 h-full bg-[#f472b6]"></span>
+              <span class="w-1/2 h-full bg-[#ffffff]"></span>
+            </div>
+            <span class="text-[9px] text-slate-400 font-medium">Rosa Bebê</span>
+          </button>
+          <button onclick="applyPalette('#4d7c0f', '#ecfccb')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
+            <div class="flex w-full h-3 rounded overflow-hidden">
+              <span class="w-1/2 h-full bg-[#4d7c0f]"></span>
+              <span class="w-1/2 h-full bg-[#ecfccb]"></span>
+            </div>
+            <span class="text-[9px] text-slate-400 font-medium">Oliva</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1 text-xs">
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-1">Filamento 1 (Base)</span>
+            <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+              <input type="color" id="baseColorInput" value="#5c3826" oninput="updateColor('base', this.value)" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0">
+              <span id="baseColorHex" class="font-mono text-slate-300 text-[11px]">#5c3826</span>
+            </div>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-1">Filamento 2 (Nome)</span>
+            <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+              <input type="color" id="overlayColorInput" value="#dfc4a2" oninput="updateColor('overlay', this.value)" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0">
+              <span id="overlayColorHex" class="font-mono text-slate-300 text-[11px]">#dfc4a2</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD: LETRA BASE (CHAPA 1) -->
+      <section id="sidebarCardBase" onclick="selectPart('base', null, false)" class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5 transition-all duration-200 cursor-pointer">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-font"></i> Letra Base
+            <span id="badgeSelectedBase" class="hidden text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Selecionado</span>
+          </span>
+          <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Chapa 1</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-1">
+            <span class="text-[10px] text-slate-400 block mb-1">Letra</span>
+            <input type="text" id="baseLetterInput" maxlength="1" value="" placeholder="Ex: R" oninput="updateParam('baseLetter', this.value)" class="w-full text-center text-lg font-bold bg-slate-900 border border-slate-700 rounded-lg py-1 text-white placeholder-slate-600 uppercase focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+          <div class="col-span-2">
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Altura Z (Espessura)</span>
+              <span id="baseZVal" class="font-mono text-amber-400">20 mm</span>
+            </div>
+            <input type="range" id="baseZRange" min="10" max="40" value="20" oninput="updateParam('depthZThicknessMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+        </div>
+
+        <div>
+          <span class="text-[10px] text-slate-400 block mb-1">Fonte da Letra Base (15 Opções)</span>
+          <select id="baseFontSelect" onchange="updateParam('baseFont', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
+            <option value="Montserrat" selected>Montserrat Black (Robusta Geométrica)</option>
+            <option value="Fredoka">Fredoka Bold (Arredondada Fofa Kids)</option>
+            <option value="Bebas">Bebas Neue (Alta e Condensada)</option>
+            <option value="Playfair">Playfair Display Black (Clássica Serifada)</option>
+            <option value="Cinzel">Cinzel Black (Imperial / Realeza)</option>
+            <option value="Abril">Abril Fatface (Elegante Luxo)</option>
+            <option value="Poppins">Poppins Black (Moderna Forte)</option>
+            <option value="RobotoSlab">Roboto Slab Black (Bloco Mecânico)</option>
+            <option value="Righteous">Righteous (Futurista / Gamer)</option>
+            <option value="Oswald">Oswald Bold (Impacto Vertical)</option>
+            <option value="AlfaSlab">Alfa Slab One (Super Pesada)</option>
+            <option value="Lobster">Lobster (Retrô Bold)</option>
+            <option value="Anton">Anton (Pôster Ultra Forte)</option>
+            <option value="Merriweather">Merriweather Black (Tradicional)</option>
+            <option value="Bangers">Bangers (Quadrinhos / Geek)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Tamanho na Mesa</span>
+              <span id="baseSizeVal" class="font-mono text-amber-400">190 mm</span>
+            </div>
+            <input type="range" id="baseSizeRange" min="100" max="240" value="190" oninput="updateParam('baseSize', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Peso do Traço</span>
+              <span id="baseWeightVal" class="font-mono text-amber-400">100%</span>
+            </div>
+            <input type="range" id="baseWeightRange" min="70" max="140" value="100" oninput="updateParam('baseWeight', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+            <span>Rotação na Mesa</span>
+            <span id="baseRotVal" class="font-mono text-amber-400">0°</span>
+          </div>
+          <input type="range" id="baseRotRange" min="-45" max="45" value="0" oninput="updateParam('baseRotation', this.value)" class="w-full accent-amber-500 cursor-pointer">
+        </div>
+      </section>
+
+      <!-- CARD: NOME CURSIVO (CHAPA 2) -->
+      <section id="sidebarCardName" onclick="selectPart('name', null, false)" class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5 transition-all duration-200 cursor-pointer">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-signature"></i> Nome Cursivo
+            <span id="badgeSelectedName" class="hidden text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Selecionado</span>
+          </span>
+          <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Chapa 2</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-1">Texto do Nome</span>
+            <input type="text" id="nameTextInput" value="" placeholder="Digite o nome..." oninput="updateParam('nameText', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 block mb-1">Fonte Cursiva (15 Opções)</span>
+            <select id="nameFontSelect" onchange="updateParam('nameFont', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value="Pacifico" selected>Pacifico (Suave Conectada)</option>
+              <option value="Dancing">Dancing Script (Caligrafia Viva)</option>
+              <option value="GreatVibes">Great Vibes (Elegante Clássica)</option>
+              <option value="Satisfy">Satisfy (Brush Fluida)</option>
+              <option value="Sacramento">Sacramento (Monoline Fina)</option>
+              <option value="AlexBrush">Alex Brush (Pincel Real)</option>
+              <option value="Parisienne">Parisienne (Francesa Romântica)</option>
+              <option value="Caveat">Caveat Bold (Manuscrita Jovem)</option>
+              <option value="Cookie">Cookie (Retrô Doce)</option>
+              <option value="Allura">Allura (Convite Luxo)</option>
+              <option value="Yellowtail">Yellowtail (Vintage Script)</option>
+              <option value="MarckScript">Marck Script (Caneta Tinteiro)</option>
+              <option value="Tangerine">Tangerine Bold (Fina Imperial)</option>
+              <option value="Kaushan">Kaushan Script (Dinâmica)</option>
+              <option value="BadScript">Bad Script (Casual Leve)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+            <span>Tamanho da Fonte do Nome (Largura)</span>
+            <span id="nameSizeVal" class="font-mono text-amber-400">145 mm</span>
+          </div>
+          <input type="range" id="nameSizeRange" min="40" max="240" value="145" oninput="updateParam('nameSize', this.value)" class="w-full accent-amber-500 cursor-pointer">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Altura Relevo Z</span>
+              <span id="nameZVal" class="font-mono text-amber-400">4.0 mm</span>
+            </div>
+            <input type="range" id="nameZRange" min="2.0" max="10.0" step="0.5" value="4.0" oninput="updateParam('nameZThicknessMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Espessura Traço</span>
+              <span id="nameWeightVal" class="font-mono text-amber-400">100%</span>
+            </div>
+            <input type="range" id="nameWeightRange" min="65" max="150" value="100" oninput="updateParam('nameWeight', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Posição X</span>
+              <span id="namePosXVal" class="font-mono text-amber-400">0 mm</span>
+            </div>
+            <input type="range" id="namePosXRange" min="-80" max="80" value="0" oninput="updateParam('namePosX', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Posição Y</span>
+              <span id="namePosYVal" class="font-mono text-amber-400">-10 mm</span>
+            </div>
+            <input type="range" id="namePosYRange" min="-80" max="80" value="-10" oninput="updateParam('namePosY', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+              <span>Inclinação</span>
+              <span id="nameRotVal" class="font-mono text-amber-400">0°</span>
+            </div>
+            <input type="range" id="nameRotRange" min="-45" max="45" value="0" oninput="updateParam('nameRotation', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD: CAVA DE ENCAIXE & TOLERÂNCIA -->
+      <section class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-puzzle-piece"></i> Cava de Encaixe & Tolerância
+          </span>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+            <span>Profundidade da Cava</span>
+            <span id="recessDepthVal" class="font-mono text-amber-400">2.5 mm</span>
+          </div>
+          <input type="range" id="recessDepthRange" min="1.0" max="5.0" step="0.5" value="2.5" oninput="updateParam('recessDepthMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+            <span>Folga X-Y (Tolerância)</span>
+            <span id="xyCompVal" class="font-mono text-amber-400">0.26 mm</span>
+          </div>
+          <input type="range" id="xyCompRange" min="0.10" max="0.50" step="0.02" value="0.26" oninput="updateParam('xyCompensationMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+        </div>
+      </section>
+
+      <!-- CARD: APLIQUES E DETALHES DINÂMICOS (ATÉ 10 ITENS) -->
+      <section class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-shapes"></i> Detalhes & Apliques
+          </span>
+          <span id="emblemCountBadge" class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-700/40 px-2 py-0.5 rounded">0 / 10</span>
+        </div>
+
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Adicione até 10 detalhes infantis ou adultos e escolha se cada um ficará <b>Por Cima (Colado)</b> sobre a superfície lisa ou <b>Cavado (Encaixe)</b> com cava na Base + peça na Placa 2.
+        </p>
+
+        <!-- Lista Dinâmica de Detalhes -->
+        <div id="emblemsListContainer" class="space-y-2.5"></div>
+
+        <!-- Botão de Adicionar Detalhe -->
+        <button id="btnAddEmblem" onclick="addEmblemSlot()" class="w-full py-2 px-3 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm">
+          <i class="fa-solid fa-plus"></i>
+          <span>Adicionar Detalhe (Máx 10)</span>
+        </button>
+      </section>
+
+    </aside>
+
+    <!-- RIGHT: 3D WebGL Three.js Viewport -->
+    <main class="flex-1 flex flex-col h-full bg-slate-950 relative overflow-hidden select-none">
+      
+      <!-- Top HUD de status da Câmera + Botões Desfazer/Refazer Diretos no 3D Orbit -->
+      <div class="px-4 py-2 flex items-center justify-between bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-xs z-10 flex-shrink-0 gap-2 flex-wrap">
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="hudBedTitle">Anycubic Kobra X PEI Bed (260 × 260 mm)</span>
+          </span>
+          <span class="text-slate-600">|</span>
+          <span class="text-slate-400 text-[11px]">
+            <i class="fa-solid fa-hand-pointer text-amber-400"></i> <b>Arraste Nome/Detalhe:</b> Mover X/Y • <b>Shift+Arraste:</b> Girar • <b>Alt+Scroll:</b> Escalar
+          </span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button id="btnUndoViewport" onclick="undoAction()" disabled class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:pointer-events-none text-amber-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="Desfazer (Ctrl+Z)">
+            <i class="fa-solid fa-rotate-left"></i> Desfazer
+          </button>
+          <button id="btnRedoViewport" onclick="redoAction()" disabled class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:pointer-events-none text-amber-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="Refazer (Ctrl+Y)">
+            <i class="fa-solid fa-rotate-right"></i> Refazer
+          </button>
+          <button onclick="resetCamera()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition flex items-center gap-1 border border-slate-700">
+            <i class="fa-solid fa-arrows-rotate text-xs"></i> Resetar Câmera
+          </button>
+        </div>
+      </div>
+
+      <!-- Container do Canvas 3D Three.js -->
+      <div id="threeContainer" class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden">
+        <!-- Badge de Carregamento CSG -->
+        <div id="loadingBadge" class="hidden absolute top-3 left-3 bg-slate-900/90 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg z-20 pointer-events-none">
+          <i class="fa-solid fa-circle-notch fa-spin text-amber-400"></i>
+          <span>Calculando geometria 3D...</span>
+        </div>
+
+        <!-- Badge de Peça Selecionada no Orbit -->
+        <div id="selectedPartHud" class="hidden absolute top-3 right-3 bg-slate-900/95 border border-amber-500/60 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg z-20">
+          <i class="fa-solid fa-crosshairs text-amber-400 animate-pulse"></i>
+          <span id="selectedPartHudText">Selecionado: Nome Cursivo</span>
+          <button onclick="clearPartSelection()" class="ml-1 text-slate-400 hover:text-white transition" title="Desmarcar seleção (Esc)">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Tooltip flutuante ao arrastar peças no 3D Orbit -->
+        <div id="dragHudTooltip" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-amber-500/50 text-amber-300 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold shadow-xl z-20 pointer-events-none flex items-center gap-2">
+          <i class="fa-solid fa-arrows-up-down-left-right text-amber-400"></i>
+          <span id="dragHudText">X: 0 mm, Y: 0 mm</span>
+        </div>
+      </div>
+
+      <!-- Barra de Medidas Calculadas -->
+      <div class="px-4 py-2 bg-slate-900/95 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between flex-shrink-0">
+        <span class="font-mono">Dimensões da Base: <strong id="meshDimsLabel" class="text-amber-400">0 × 0 × 0 mm</strong></span>
+        <span id="inlayStatusBadge" class="font-mono text-[11px] text-slate-400">Peças Internas: <strong class="text-emerald-400">0</strong></span>
+        <span class="font-mono">Espessura Total: <strong id="meshTotalZLabel" class="text-emerald-400">0.0 mm</strong></span>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JAVASCRIPT: MOTOR 3D THREE.JS + STL EXPORTER -->
+  <script>
+    /* =========================================================
+       CATÁLOGO DE PERFIS DE IMPRESSORAS 3D
+       ========================================================= */
+    const PRINTER_PROFILES = {
+      kobra_x: {
+        id: 'kobra_x',
+        name: 'Anycubic Kobra X',
+        slicerName: 'Anycubic Slicer',
+        fileTag: 'Anycubic_KobraX',
+        bedWidth: 260,
+        bedDepth: 260,
+        maxZ: 260,
+        maxRecommendedLetter: 240,
+        bedColor: 0x1e293b,
+        gridColor: 0xf59e0b
+      },
+      bambu_a1: {
+        id: 'bambu_a1',
+        name: 'Bambu Lab A1',
+        slicerName: 'Bambu Studio',
+        fileTag: 'BambuLab_A1',
+        bedWidth: 256,
+        bedDepth: 256,
+        maxZ: 256,
+        maxRecommendedLetter: 236,
+        bedColor: 0x18222f,
+        gridColor: 0x10b981
+      },
+      ender_v3_ke: {
+        id: 'ender_v3_ke',
+        name: 'Creality Ender-3 V3 KE',
+        slicerName: 'Creality Print / Orca',
+        fileTag: 'Ender3_V3_KE',
+        bedWidth: 220,
+        bedDepth: 220,
+        maxZ: 240,
+        maxRecommendedLetter: 205,
+        bedColor: 0x1c1917,
+        gridColor: 0x38bdf8
+      }
+    };
+
+    /* =========================================================
+       ESTADO REATIVO DO MODELO PARAMÉTRICO
+       ========================================================= */
+    const state = {
+      printerProfile: 'kobra_x',
+      bedSizeMM: 260,
+
+      baseLetter: '',
+      baseFont: 'Montserrat',
+      baseSize: 190,
+      baseWeight: 100, // % de espessura de traço
+      baseColor: '#5c3826',
+      baseRotation: 0,
+      depthZThicknessMM: 20,
+
+      nameText: '',
+      nameFont: 'Pacifico',
+      nameSize: 145, // Largura total do nome em mm
+      nameWeight: 100, // % de espessura de traço
+      namePosX: 0,
+      namePosY: -10,
+      nameRotation: 0,
+      nameZThicknessMM: 4.0,
+      recessDepthMM: 2.5,
+      overlayColor: '#dfc4a2',
+
+      xyCompensationMM: 0.26,
+
+      // Lista dinâmica de até 10 detalhes/apliques
+      // Cada item: { id, type, mode: 'relief' | 'carved', x, y, size, rot }
+      emblems: [],
+
+      viewMode: 'assemble' // 'assemble', 'plate1', 'plate2', 'plate3'
+    };
+
+    const MAX_EMBLEMS = 10;
+
+    // Estado da Peça Selecionada no 3D Orbit e na Barra Lateral
+    // { type: 'base' | 'name' | 'emblem' | null, emblemIndex: number | null }
+    let selectedPart = { type: null, emblemIndex: null };
+    let selectionBoxHelper = null;
+
+    /* =========================================================
+       HISTÓRICO DE DESFAZER / REFAZER (UNDO / REDO STACK)
+       ========================================================= */
+    const historyStack = [];
+    const redoStack = [];
+    const MAX_HISTORY = 50;
+    let isRestoringHistory = false;
+    let historyDebounceTimer = null;
+
+    function cloneCurrentState() {
+      return JSON.parse(JSON.stringify({
+        printerProfile: state.printerProfile,
+        bedSizeMM: state.bedSizeMM,
+        baseLetter: state.baseLetter,
+        baseFont: state.baseFont,
+        baseSize: state.baseSize,
+        baseWeight: state.baseWeight,
+        baseColor: state.baseColor,
+        baseRotation: state.baseRotation,
+        depthZThicknessMM: state.depthZThicknessMM,
+        nameText: state.nameText,
+        nameFont: state.nameFont,
+        nameSize: state.nameSize,
+        nameWeight: state.nameWeight,
+        namePosX: state.namePosX,
+        namePosY: state.namePosY,
+        nameRotation: state.nameRotation,
+        nameZThicknessMM: state.nameZThicknessMM,
+        recessDepthMM: state.recessDepthMM,
+        overlayColor: state.overlayColor,
+        xyCompensationMM: state.xyCompensationMM,
+        emblems: state.emblems
+      }));
+    }
+
+    function updateUndoRedoButtons() {
+      const canUndo = historyStack.length <= 1;
+      const canRedo = redoStack.length === 0;
+      ['btnUndo', 'btnUndoViewport'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = canUndo;
+      });
+      ['btnRedo', 'btnRedoViewport'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = canRedo;
+      });
+    }
+
+    function recordStateChange(immediate = false) {
+      if (isRestoringHistory) return;
+      clearTimeout(historyDebounceTimer);
+      const pushSnapshot = () => {
+        const snap = cloneCurrentState();
+        const last = historyStack[historyStack.length - 1];
+        if (last && JSON.stringify(last) === JSON.stringify(snap)) return;
+        historyStack.push(snap);
+        if (historyStack.length > MAX_HISTORY) historyStack.shift();
+        redoStack.length = 0;
+        updateUndoRedoButtons();
+      };
+      if (immediate) {
+        pushSnapshot();
+      } else {
+        historyDebounceTimer = setTimeout(pushSnapshot, 280);
+      }
+    }
+
+    function syncSidebarControlsFromState() {
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+      const setTxt = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+
+      setVal('printerProfileSelect', state.printerProfile);
+      setVal('baseColorInput', state.baseColor);
+      setTxt('baseColorHex', state.baseColor);
+      setVal('overlayColorInput', state.overlayColor);
+      setTxt('overlayColorHex', state.overlayColor);
+
+      setVal('baseLetterInput', state.baseLetter);
+      setVal('baseZRange', state.depthZThicknessMM);
+      setTxt('baseZVal', `${state.depthZThicknessMM} mm`);
+      setVal('baseFontSelect', state.baseFont);
+      setVal('baseWeightRange', state.baseWeight);
+      setTxt('baseWeightVal', `${state.baseWeight}%`);
+      setVal('baseSizeRange', state.baseSize);
+      setTxt('baseSizeVal', `${state.baseSize} mm`);
+      setVal('baseRotRange', state.baseRotation);
+      setTxt('baseRotVal', `${state.baseRotation}°`);
+
+      setVal('nameTextInput', state.nameText);
+      setVal('nameFontSelect', state.nameFont);
+      setVal('nameSizeRange', state.nameSize);
+      setTxt('nameSizeVal', `${Math.round(state.nameSize)} mm`);
+      setVal('nameWeightRange', state.nameWeight);
+      setTxt('nameWeightVal', `${state.nameWeight}%`);
+      setVal('nameZRange', state.nameZThicknessMM);
+      setTxt('nameZVal', `${state.nameZThicknessMM.toFixed(1)} mm`);
+      setVal('namePosXRange', state.namePosX);
+      setTxt('namePosXVal', `${Math.round(state.namePosX)} mm`);
+      setVal('namePosYRange', state.namePosY);
+      setTxt('namePosYVal', `${Math.round(state.namePosY)} mm`);
+      setVal('nameRotRange', state.nameRotation);
+      setTxt('nameRotVal', `${Math.round(state.nameRotation)}°`);
+
+      setVal('recessDepthRange', state.recessDepthMM);
+      setTxt('recessDepthVal', `${state.recessDepthMM.toFixed(1)} mm`);
+      setVal('xyCompRange', state.xyCompensationMM);
+      setTxt('xyCompVal', `${state.xyCompensationMM.toFixed(2)} mm`);
+
+      renderEmblemsUI();
+    }
+
+    function applySnapshot(snap) {
+      isRestoringHistory = true;
+      const prevPrinter = state.printerProfile;
+      Object.assign(state, JSON.parse(JSON.stringify(snap)));
+      syncSidebarControlsFromState();
+      if (prevPrinter !== state.printerProfile) {
+        updatePrinterBed3D();
+      }
+      rebuild3DModel();
+      updateUndoRedoButtons();
+      isRestoringHistory = false;
+    }
+
+    function undoAction() {
+      if (historyStack.length <= 1) return;
+      const current = historyStack.pop();
+      redoStack.push(current);
+      const prev = historyStack[historyStack.length - 1];
+      applySnapshot(prev);
+    }
+
+    function redoAction() {
+      if (redoStack.length === 0) return;
+      const next = redoStack.pop();
+      historyStack.push(next);
+      applySnapshot(next);
+    }
+
+    // Posições iniciais inteligentes para cada novo detalhe não cair exatamente em cima do anterior
+    const DEFAULT_EMBLEM_PRESETS = [
+      { type: 'bear', x: 45, y: 55, size: 46, rot: 0 },
+      { type: 'crown', x: -45, y: 58, size: 42, rot: 10 },
+      { type: 'star', x: -52, y: -45, size: 34, rot: -12 },
+      { type: 'cloud', x: 50, y: -48, size: 40, rot: 0 },
+      { type: 'balloon', x: 58, y: 15, size: 44, rot: -8 },
+      { type: 'heart', x: -55, y: 15, size: 35, rot: 12 },
+      { type: 'butterfly', x: 0, y: 68, size: 38, rot: 0 },
+      { type: 'moon', x: -35, y: -62, size: 36, rot: 15 },
+      { type: 'feet', x: 35, y: -62, size: 36, rot: -10 },
+      { type: 'bow', x: 0, y: -68, size: 38, rot: 0 }
+    ];
+
+    function getEmblemOptionsHTML(selectedType) {
+      const groups = [
+        {
+          label: '👶 Infantil & Maternidade',
+          items: [
+            { val: 'bear', text: '🧸 Ursinho Teddy (Vazado)' },
+            { val: 'crown', text: '👑 Coroa Real (Príncipe / Princesa)' },
+            { val: 'balloon', text: '🎈 Balão de Ar Quente' },
+            { val: 'butterfly', text: '🦋 Borboleta Delicada (Vazada)' },
+            { val: 'cloud', text: '☁️ Nuvem Fofa' },
+            { val: 'star', text: '⭐ Estrela Sorriso' },
+            { val: 'moon', text: '🌙 Lua Crescente' },
+            { val: 'dino', text: '🦖 Dinossauro Kids' },
+            { val: 'rocket', text: '🚀 Foguete Espacial' },
+            { val: 'bow', text: '🎀 Laço de Fita' },
+            { val: 'feet', text: '👣 Pezinhos de Bebê' },
+            { val: 'lion', text: '🦁 Leãozinho Safari' }
+          ]
+        },
+        {
+          label: '🧑 Jovem, Gamer & Adulto',
+          items: [
+            { val: 'heart', text: '❤️ Coração Clássico' },
+            { val: 'gamepad', text: '🎮 Controle Gamer (Joystick)' },
+            { val: 'paw', text: '🐾 Patinha Pet (Cão / Gato)' },
+            { val: 'music', text: '🎵 Nota Musical (Clave)' },
+            { val: 'flower', text: '🌸 Flor / Rosa Estilizada' },
+            { val: 'infinity', text: '♾️ Símbolo do Infinito' },
+            { val: 'cross', text: '✝️ Cruz Clássica' },
+            { val: 'anchor', text: '⚓ Âncora Náutica' },
+            { val: 'plane', text: '✈️ Avião / Viagem' },
+            { val: 'dumbbell', text: '🏋️ Halteres Fitness / Academia' },
+            { val: 'diamond', text: '💎 Diamante Lapidado' },
+            { val: 'lightning', text: '⚡ Raio Radical' }
+          ]
+        }
+      ];
+
+      return groups.map(g => `
+        <optgroup label="${g.label}">
+          ${g.items.map(it => `<option value="${it.val}" ${it.val === selectedType ? 'selected' : ''}>${it.text}</option>`).join('')}
+        </optgroup>
+      `).join('');
+    }
+
+    function renderEmblemsUI() {
+      const container = document.getElementById('emblemsListContainer');
+      const badge = document.getElementById('emblemCountBadge');
+      const btnAdd = document.getElementById('btnAddEmblem');
+      if (!container) return;
+
+      if (badge) badge.textContent = `${state.emblems.length} / ${MAX_EMBLEMS}`;
+      if (btnAdd) {
+        if (state.emblems.length >= MAX_EMBLEMS) {
+          btnAdd.disabled = true;
+          btnAdd.classList.add('opacity-40', 'cursor-not-allowed');
+          btnAdd.innerHTML = `<i class="fa-solid fa-check"></i><span>Limite de 10 Detalhes Atingido</span>`;
+        } else {
+          btnAdd.disabled = false;
+          btnAdd.classList.remove('opacity-40', 'cursor-not-allowed');
+          btnAdd.innerHTML = `<i class="fa-solid fa-plus"></i><span>Adicionar Detalhe (${state.emblems.length}/${MAX_EMBLEMS})</span>`;
+        }
+      }
+
+      container.innerHTML = state.emblems.map((emb, idx) => {
+        const isRelief = emb.mode === 'relief';
+        const isSelected = selectedPart.type === 'emblem' && selectedPart.emblemIndex === idx;
+        const cardBorderClass = isSelected
+          ? 'border-amber-400 ring-2 ring-amber-500/40 bg-slate-900 shadow-lg shadow-amber-950/30'
+          : 'border-slate-800 bg-slate-900/95';
+        return `
+          <div id="sidebarCardEmblem_${idx}" onclick="selectPart('emblem', ${idx}, false)" class="p-2.5 rounded-xl border ${cardBorderClass} space-y-2.5 transition-all duration-200 cursor-pointer">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full ${isSelected ? 'bg-amber-500 text-slate-950' : 'bg-amber-500/20 text-amber-300'} border border-amber-500/40 flex items-center justify-center text-[10px] font-mono">${idx + 1}</span>
+                Detalhe #${idx + 1}
+                ${isSelected ? '<span class="text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Selecionado</span>' : ''}
+              </span>
+              <div class="flex items-center gap-1.5">
+                <button onclick="event.stopPropagation(); resetEmblemItem(${idx})" class="px-1.5 py-0.5 text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition" title="Resetar posição">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button onclick="event.stopPropagation(); removeEmblemSlot(${idx})" class="px-1.5 py-0.5 text-[10px] bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/40 rounded transition" title="Remover este detalhe">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Seletor do Desenho -->
+            <div>
+              <select onchange="updateEmblemField(${idx}, 'type', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
+                ${getEmblemOptionsHTML(emb.type)}
+              </select>
+            </div>
+
+            <!-- Modo: Alto Relevo (Por Cima) vs Cavado com Peça de Encaixe -->
+            <div>
+              <span class="text-[10px] text-slate-400 block mb-1">Tipo de Aplicação na Peça</span>
+              <div class="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                <button type="button" onclick="updateEmblemField(${idx}, 'mode', 'relief')" class="py-1 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition ${isRelief ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}">
+                  <i class="fa-solid fa-layer-group"></i> Por Cima (Colado)
+                </button>
+                <button type="button" onclick="updateEmblemField(${idx}, 'mode', 'carved')" class="py-1 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition ${!isRelief ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}">
+                  <i class="fa-solid fa-puzzle-piece"></i> Cavado (Encaixe)
+                </button>
+              </div>
+            </div>
+
+            <!-- Sliders de Posição, Tamanho e Rotação -->
+            <div class="space-y-2 pt-1 border-t border-slate-800/80">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400">
+                    <span>Posição X</span>
+                    <span id="embXVal_${idx}" class="font-mono text-amber-400">${emb.x} mm</span>
+                  </div>
+                  <input type="range" min="-115" max="115" value="${emb.x}" oninput="updateEmblemField(${idx}, 'x', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                </div>
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400">
+                    <span>Posição Y</span>
+                    <span id="embYVal_${idx}" class="font-mono text-amber-400">${emb.y} mm</span>
+                  </div>
+                  <input type="range" min="-115" max="115" value="${emb.y}" oninput="updateEmblemField(${idx}, 'y', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400">
+                    <span>Tamanho</span>
+                    <span id="embSizeVal_${idx}" class="font-mono text-amber-400">${emb.size} mm</span>
+                  </div>
+                  <input type="range" min="15" max="110" value="${emb.size}" oninput="updateEmblemField(${idx}, 'size', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                </div>
+                <div>
+                  <div class="flex justify-between text-[10px] text-slate-400">
+                    <span>Rotação</span>
+                    <span id="embRotVal_${idx}" class="font-mono text-amber-400">${emb.rot}°</span>
+                  </div>
+                  <input type="range" min="-90" max="90" value="${emb.rot}" oninput="updateEmblemField(${idx}, 'rot', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addEmblemSlot() {
+      if (state.emblems.length >= MAX_EMBLEMS) return;
+      const preset = DEFAULT_EMBLEM_PRESETS[state.emblems.length % DEFAULT_EMBLEM_PRESETS.length];
+      const newIdx = state.emblems.length;
+      state.emblems.push({
+        id: Date.now() + Math.random(),
+        type: preset.type,
+        mode: 'relief', // 'relief' = Alto Relevo (Chapa 2 + Cava), 'carved' = Apenas Cavado na Base (Chapa 1)
+        x: preset.x,
+        y: preset.y,
+        size: preset.size,
+        rot: preset.rot
+      });
+      selectedPart = { type: 'emblem', emblemIndex: newIdx };
+      renderEmblemsUI();
+      updateSidebarSelectionHighlight(true);
+      recordStateChange(true);
+      rebuild3DModel();
+    }
+
+    function removeEmblemSlot(index) {
+      state.emblems.splice(index, 1);
+      if (selectedPart.type === 'emblem') {
+        if (selectedPart.emblemIndex === index) {
+          selectedPart = { type: null, emblemIndex: null };
+        } else if (selectedPart.emblemIndex > index) {
+          selectedPart.emblemIndex--;
+        }
+      }
+      renderEmblemsUI();
+      updateSidebarSelectionHighlight(false);
+      recordStateChange(true);
+      rebuild3DModel();
+    }
+
+    /* =========================================================
+       SISTEMA DE SELEÇÃO BIDIRECIONAL (ORBIT 3D <-> SIDEBAR)
+       ========================================================= */
+    function selectPart(type, emblemIndex = null, scrollToSidebar = true) {
+      selectedPart = { type, emblemIndex };
+      updateSidebarSelectionHighlight(scrollToSidebar);
+      update3DSelectionHighlight();
+    }
+
+    function clearPartSelection() {
+      selectedPart = { type: null, emblemIndex: null };
+      updateSidebarSelectionHighlight(false);
+      update3DSelectionHighlight();
+    }
+
+    function updateSidebarSelectionHighlight(scrollToCard = false) {
+      const cardBase = document.getElementById('sidebarCardBase');
+      const cardName = document.getElementById('sidebarCardName');
+      const badgeBase = document.getElementById('badgeSelectedBase');
+      const badgeName = document.getElementById('badgeSelectedName');
+
+      const activeClasses = ['border-amber-400', 'ring-2', 'ring-amber-500/40', 'bg-slate-900', 'shadow-lg', 'shadow-amber-950/30'];
+      const inactiveClasses = ['border-slate-800/80', 'bg-slate-950/70'];
+
+      if (cardBase) {
+        if (selectedPart.type === 'base') {
+          cardBase.classList.remove(...inactiveClasses);
+          cardBase.classList.add(...activeClasses);
+          if (badgeBase) badgeBase.classList.remove('hidden');
+          if (scrollToCard) cardBase.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          cardBase.classList.remove(...activeClasses);
+          cardBase.classList.add(...inactiveClasses);
+          if (badgeBase) badgeBase.classList.add('hidden');
+        }
+      }
+
+      if (cardName) {
+        if (selectedPart.type === 'name') {
+          cardName.classList.remove(...inactiveClasses);
+          cardName.classList.add(...activeClasses);
+          if (badgeName) badgeName.classList.remove('hidden');
+          if (scrollToCard) cardName.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          cardName.classList.remove(...activeClasses);
+          cardName.classList.add(...inactiveClasses);
+          if (badgeName) badgeName.classList.add('hidden');
+        }
+      }
+
+      // Atualiza o destaque dos cards de Detalhes (#1 a #10) sem recriar os inputs enquanto o usuário digita/arrasta
+      for (let i = 0; i < state.emblems.length; i++) {
+        const embCard = document.getElementById(`sidebarCardEmblem_${i}`);
+        if (!embCard) continue;
+        const isSel = selectedPart.type === 'emblem' && selectedPart.emblemIndex === i;
+        if (isSel) {
+          embCard.classList.remove('border-slate-800', 'bg-slate-900/95');
+          embCard.classList.add(...activeClasses);
+          if (scrollToCard) embCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          embCard.classList.remove(...activeClasses);
+          embCard.classList.add('border-slate-800', 'bg-slate-900/95');
+        }
+      }
+      renderEmblemsUI();
+      if (scrollToCard && selectedPart.type === 'emblem' && selectedPart.emblemIndex !== null) {
+        const targetCard = document.getElementById(`sidebarCardEmblem_${selectedPart.emblemIndex}`);
+        if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function update3DSelectionHighlight() {
+      if (!scene) return;
+
+      // Remove BoxHelper anterior se existir
+      if (selectionBoxHelper) {
+        scene.remove(selectionBoxHelper);
+        if (selectionBoxHelper.geometry) selectionBoxHelper.geometry.dispose();
+        if (selectionBoxHelper.material) selectionBoxHelper.material.dispose();
+        selectionBoxHelper = null;
+      }
+
+      // Restaura emissive padrão de todas as malhas
+      const allGroups = [baseGroup, nameGroup, emblemGroup];
+      for (const grp of allGroups) {
+        if (!grp) continue;
+        grp.traverse(obj => {
+          if (obj.isMesh && obj.material && obj.material.emissive && !obj.userData.isVisualHelperOnly) {
+            obj.material.emissive.setHex(0x000000);
+            obj.material.emissiveIntensity = 0;
+          }
+        });
+      }
+
+      const hud = document.getElementById('selectedPartHud');
+      const hudText = document.getElementById('selectedPartHudText');
+
+      if (!selectedPart.type) {
+        if (hud) hud.classList.add('hidden');
+        return;
+      }
+
+      let targetObject3D = null;
+      let labelName = '';
+
+      if (selectedPart.type === 'base' && baseGroup && baseGroup.visible) {
+        targetObject3D = baseGroup;
+        labelName = `Letra Base (${state.baseLetter})`;
+        baseGroup.traverse(obj => {
+          if (obj.isMesh && obj.userData.dragType === 'base' && obj.material && obj.material.emissive) {
+            obj.material.emissive.setHex(0xf59e0b);
+            obj.material.emissiveIntensity = 0.18;
+          }
+        });
+      } else if (selectedPart.type === 'name' && nameGroup && nameGroup.visible) {
+        const nameMesh = nameGroup.children.find(m => m.userData.dragType === 'name');
+        if (nameMesh) {
+          targetObject3D = nameMesh;
+          labelName = `Nome Cursivo (${state.nameText})`;
+          if (nameMesh.material && nameMesh.material.emissive) {
+            nameMesh.material.emissive.setHex(0x38bdf8);
+            nameMesh.material.emissiveIntensity = 0.22;
+          }
+        }
+      } else if (selectedPart.type === 'emblem' && emblemGroup && emblemGroup.visible) {
+        const embMesh = emblemGroup.children.find(
+          m => m.userData.dragType === 'emblem' && m.userData.emblemIndex === selectedPart.emblemIndex
+        );
+        if (embMesh) {
+          targetObject3D = embMesh;
+          labelName = `Detalhe #${selectedPart.emblemIndex + 1}`;
+          if (embMesh.material && embMesh.material.emissive) {
+            embMesh.material.emissive.setHex(0x10b981);
+            embMesh.material.emissiveIntensity = 0.25;
+          }
+        }
+      }
+
+      if (targetObject3D) {
+        selectionBoxHelper = new THREE.BoxHelper(targetObject3D, 0xfbbf24);
+        selectionBoxHelper.material.depthTest = false;
+        selectionBoxHelper.material.transparent = true;
+        selectionBoxHelper.material.opacity = 0.9;
+        selectionBoxHelper.renderOrder = 999;
+        scene.add(selectionBoxHelper);
+
+        if (hud && hudText) {
+          hudText.textContent = `Selecionado: ${labelName}`;
+          hud.classList.remove('hidden');
+        }
+      } else if (hud) {
+        hud.classList.add('hidden');
+      }
+    }
+
+    function resetEmblemItem(index) {
+      const emb = state.emblems[index];
+      if (!emb) return;
+      const preset = DEFAULT_EMBLEM_PRESETS[index % DEFAULT_EMBLEM_PRESETS.length];
+      emb.x = preset.x;
+      emb.y = preset.y;
+      emb.size = preset.size;
+      emb.rot = preset.rot;
+      renderEmblemsUI();
+      recordStateChange(true);
+      rebuild3DModel();
+    }
+
+    function updateEmblemField(index, field, value) {
+      const emb = state.emblems[index];
+      if (!emb) return;
+
+      if (field === 'type' || field === 'mode') {
+        emb[field] = value;
+        if (field === 'mode') renderEmblemsUI();
+        recordStateChange(true);
+      } else {
+        const num = parseFloat(value) || 0;
+        emb[field] = num;
+        if (field === 'x') {
+          const el = document.getElementById(`embXVal_${index}`);
+          if (el) el.textContent = `${Math.round(num)} mm`;
+        } else if (field === 'y') {
+          const el = document.getElementById(`embYVal_${index}`);
+          if (el) el.textContent = `${Math.round(num)} mm`;
+        } else if (field === 'size') {
+          const el = document.getElementById(`embSizeVal_${index}`);
+          if (el) el.textContent = `${Math.round(num)} mm`;
+        } else if (field === 'rot') {
+          const el = document.getElementById(`embRotVal_${index}`);
+          if (el) el.textContent = `${Math.round(num)}°`;
+        }
+        recordStateChange(false);
+      }
+      rebuild3DModel();
+    }
+
+    let scene, camera, renderer, controls;
+    let baseGroup, nameGroup, emblemGroup, plate3Group;
+    let bedGroup = null;
+
+    /**
+     * Desenha o logotipo vetorial oficial da ANYCUBIC (com o 'A' estilizado em triângulo cortado)
+     */
+    function drawAnycubicBrandLogo(ctx, centerX, centerY, scale = 1.0, color = '#e2e8f0') {
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(scale, scale);
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+
+      // Emblema geométrico Anycubic acima/ao lado ou texto tipográfico oficial "ANYCUBIC"
+      ctx.font = '900 54px "Montserrat", "Inter", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.letterSpacing = '6px';
+      ctx.fillText('ANYCUBIC', 0, 0);
+
+      ctx.restore();
+    }
+
+    /**
+     * Desenha o símbolo de aviso de Superfície Quente (Hot Surface Triangle) original das chapas PEI
+     */
+    function drawHotSurfaceWarning(ctx, x, y, size, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3.5;
+      ctx.lineJoin = 'round';
+
+      // Triângulo de alerta
+      const h = size * 0.866;
+      ctx.beginPath();
+      ctx.moveTo(0, -h * 0.6);
+      ctx.lineTo(size * 0.55, h * 0.4);
+      ctx.lineTo(-size * 0.55, h * 0.4);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Ondas de calor verticais dentro do triângulo
+      ctx.lineWidth = 2.5;
+      for (let i = -1; i <= 1; i++) {
+        const wx = i * (size * 0.13);
+        ctx.beginPath();
+        ctx.moveTo(wx, h * 0.18);
+        ctx.quadraticCurveTo(wx - 3, h * 0.02, wx, -h * 0.08);
+        ctx.quadraticCurveTo(wx + 3, -h * 0.18, wx, -h * 0.28);
+        ctx.stroke();
+      }
+      // Linha base dentro do triângulo
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.26, h * 0.25);
+      ctx.lineTo(size * 0.26, h * 0.25);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    /**
+     * Gera a Textura Colorida (2048x2048) e o Bump Map granulado do revestimento PEI
+     * fiel à foto real enviada da Anycubic Kobra X (Double Sided PEI Sheet), Bambu Lab A1 e Creality
+     */
+    function createPEIBedTextures(profile) {
+      const RES = 2048;
+      const canvas = document.createElement('canvas');
+      canvas.width = RES;
+      canvas.height = RES;
+      const ctx = canvas.getContext('2d');
+
+      // Canvas secundário para o Bump Map (relevo micro-texturizado de PEI Powder-Coated)
+      const bumpCanvas = document.createElement('canvas');
+      bumpCanvas.width = 512;
+      bumpCanvas.height = 512;
+      const bCtx = bumpCanvas.getContext('2d');
+      bCtx.fillStyle = '#808080';
+      bCtx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 65000; i++) {
+        const bx = Math.random() * 512;
+        const by = Math.random() * 512;
+        const v = Math.floor(85 + Math.random() * 170);
+        bCtx.fillStyle = `rgb(${v},${v},${v})`;
+        bCtx.fillRect(bx, by, 1.9, 1.9);
+      }
+
+      const wMM = profile.bedWidth;
+      const pxPerMM = RES / wMM;
+      const center = RES / 2;
+
+      // =========================================================================
+      // PERFIL 1: ANYCUBIC KOBRA X (RÉPLICA EXATA DA FOTO ENVIADA PELO USUÁRIO)
+      // - Chapa PEI Preta/Antracite Fosca Granulada SEM grade interna (superfície limpa!)
+      // - Lateral esquerda: Linha vertical branca interrompida no meio pelo texto vertical "Double Sided PEI Sheet"
+      // - Canto inferior direito: Ícone triangular de Superfície Quente acima de um retângulo branco sólido
+      // - Aba frontal deslocada para a direita com símbolo Anycubic vazado + etiqueta cinza clara "PLA/ABS/PETG/ASA"
+      // =========================================================================
+      if (profile.id === 'kobra_x') {
+        // 1. Fundo PEI Preto/Grafite Antracite Granulado Fiel à Foto
+        const grad = ctx.createRadialGradient(center, center, 100, center, center, RES * 0.78);
+        grad.addColorStop(0, '#2b2d30');
+        grad.addColorStop(0.6, '#232528');
+        grad.addColorStop(1, '#1b1d1f');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, RES, RES);
+
+        // Micro-grãos densos cinza-prateados e escuros do PEI Powder-Coated real da foto
+        for (let i = 0; i < 95000; i++) {
+          const x = Math.random() * RES;
+          const y = Math.random() * RES;
+          const r = Math.random();
+          if (r > 0.65) {
+            ctx.fillStyle = 'rgba(210, 214, 220, 0.085)';
+          } else if (r > 0.3) {
+            ctx.fillStyle = 'rgba(140, 145, 152, 0.06)';
+          } else {
+            ctx.fillStyle = 'rgba(10, 12, 14, 0.22)';
+          }
+          ctx.fillRect(x, y, 2.2, 2.2);
+        }
+
+        const silkWhite = 'rgba(241, 245, 249, 0.90)';
+
+        // 2. Linha Vertical na Borda Esquerda + Texto Vertical "Double Sided PEI Sheet" (Exatamente como na foto!)
+        const leftX = 11.5 * pxPerMM;
+        const topLineStart = 18 * pxPerMM;
+        const topLineEnd = 74 * pxPerMM;
+        const bottomLineStart = 158 * pxPerMM;
+        const bottomLineEnd = (wMM - 16) * pxPerMM;
+
+        ctx.strokeStyle = silkWhite;
+        ctx.lineWidth = 4.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        // Traço superior antes do texto
+        ctx.moveTo(leftX, topLineStart);
+        ctx.lineTo(leftX, topLineEnd);
+        // Traço inferior depois do texto até o final da chapa
+        ctx.moveTo(leftX, bottomLineStart);
+        ctx.lineTo(leftX, bottomLineEnd);
+        ctx.stroke();
+
+        // Texto Vertical "Double Sided PEI Sheet" alinhado à linha esquerda
+        ctx.save();
+        ctx.translate(leftX, (topLineEnd + bottomLineStart) / 2);
+        ctx.rotate(Math.PI / 2);
+        ctx.fillStyle = silkWhite;
+        ctx.font = '700 33px "Inter", "Montserrat", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Double Sided PEI Sheet', 0, 0);
+        ctx.restore();
+
+        // 3. Canto Inferior Direito: Símbolo Triangular de Superfície Quente + Bloco Retangular Branco abaixo dele
+        const warnX = RES - 16 * pxPerMM;
+        const warnY = RES - 24 * pxPerMM;
+        drawHotSurfaceWarning(ctx, warnX, warnY, 54, silkWhite);
+
+        // Retângulo branco arredondado logo abaixo do triângulo de calor (fiel à foto)
+        const boxW = 54;
+        const boxH = 34;
+        ctx.fillStyle = 'rgba(235, 239, 244, 0.88)';
+        ctx.beginPath();
+        ctx.roundRect(warnX - boxW / 2, warnY + 28, boxW, boxH, 4);
+        ctx.fill();
+      }
+
+      // =========================================================================
+      // PERFIL 2: BAMBU LAB A1 (BAMBU TEXTURED PEI PLATE OFICIAL 256x256)
+      // =========================================================================
+      else if (profile.id === 'bambu_a1') {
+        // Fundo Preto-Carvão Fosco / PEI Texturizado Escuro da Bambu Lab
+        ctx.fillStyle = '#181a1f';
+        ctx.fillRect(0, 0, RES, RES);
+
+        for (let i = 0; i < 42000; i++) {
+          const x = Math.random() * RES;
+          const y = Math.random() * RES;
+          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.22)';
+          ctx.fillRect(x, y, 2, 2);
+        }
+
+        const pad = 7 * pxPerMM;
+        const bambuSilk = 'rgba(226, 232, 240, 0.45)';
+
+        // Moldura fina com cantos chanfrados característica da Bambu Lab
+        ctx.strokeStyle = bambuSilk;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(pad, pad, RES - pad * 2, RES - pad * 2);
+
+        // Grade discreta de 50mm
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.14)';
+        ctx.beginPath();
+        const steps50 = Math.floor(wMM / 100);
+        for (let i = -steps50; i <= steps50; i++) {
+          const off = i * 50 * pxPerMM;
+          ctx.moveTo(center + off, pad);
+          ctx.lineTo(center + off, RES - pad);
+          ctx.moveTo(pad, center + off);
+          ctx.lineTo(RES - pad, center + off);
+        }
+        ctx.stroke();
+
+        // Logotipo Central Bambu Lab (Duas barras verticais com corte diagonal no meio)
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        // Coluna esquerda do Bambu
+        ctx.fillRect(-52, -90, 38, 82);
+        ctx.fillRect(-52, 8, 38, 82);
+        // Coluna direita do Bambu
+        ctx.fillRect(14, -90, 38, 82);
+        ctx.fillRect(14, 8, 38, 82);
+        ctx.restore();
+
+        // Inscrição Frontal autêntica da Bambu Textured PEI Plate
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.82)';
+        ctx.font = '800 32px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Bambu Textured PEI Plate', pad + 28, RES - pad - 36);
+
+        // Código ArUco / QR de identificação da placa no canto direito
+        const qrX = RES - pad - 110;
+        const qrY = RES - pad - 88;
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.85)';
+        ctx.fillRect(qrX, qrY, 64, 64);
+        ctx.fillStyle = '#181a1f';
+        ctx.fillRect(qrX + 6, qrY + 6, 52, 52);
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.85)';
+        [[1,1],[3,1],[1,2],[2,3],[3,3],[1,4],[4,4]].forEach(([bx, by]) => {
+          ctx.fillRect(qrX + 6 + bx * 9, qrY + 6 + by * 9, 8, 8);
+        });
+      }
+
+      // =========================================================================
+      // PERFIL 3: CREALITY ENDER-3 V3 KE (CREALITY PEI FLEX PLATE 220x220)
+      // =========================================================================
+      else {
+        ctx.fillStyle = '#1a1b1e';
+        ctx.fillRect(0, 0, RES, RES);
+
+        for (let i = 0; i < 38000; i++) {
+          const x = Math.random() * RES;
+          const y = Math.random() * RES;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.032)';
+          ctx.fillRect(x, y, 2, 2);
+        }
+
+        const pad = 8 * pxPerMM;
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.35)';
+        ctx.lineWidth = 3.5;
+        ctx.strokeRect(pad, pad, RES - pad * 2, RES - pad * 2);
+
+        // Grade Creality com réguas X e Y
+        ctx.lineWidth = 1.8;
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.14)';
+        ctx.beginPath();
+        const steps = Math.floor((wMM - 16) / 20);
+        for (let i = -steps; i <= steps; i++) {
+          const off = i * 10 * pxPerMM;
+          ctx.moveTo(center + off, pad);
+          ctx.lineTo(center + off, RES - pad);
+          ctx.moveTo(pad, center + off);
+          ctx.lineTo(RES - pad, center + off);
+        }
+        ctx.stroke();
+
+        // Marca d'água CREALITY no centro
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+        ctx.font = '900 72px "Montserrat", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CREALITY', center, center);
+
+        // Logo frontal Creality Ender
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.85)';
+        ctx.font = '900 40px "Montserrat", sans-serif';
+        ctx.fillText('CREALITY', center, RES - pad - 42);
+      }
+
+      const mapTex = new THREE.CanvasTexture(canvas);
+      mapTex.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 4;
+      mapTex.needsUpdate = true;
+
+      const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+      bumpTex.wrapS = THREE.RepeatWrapping;
+      bumpTex.wrapT = THREE.RepeatWrapping;
+      bumpTex.repeat.set(6, 6);
+      bumpTex.needsUpdate = true;
+
+      return { mapTex, bumpTex };
+    }
+
+    /**
+     * Constrói o modelo 3D físico da Chapa de Aço Mola PEI (Spring Steel Sheet)
+     * com o recorte exato da foto para a Anycubic Kobra X:
+     * - 2 entalhes em V arredondados na borda traseira superior
+     * - Aba frontal deslocada para a direita com o recorte triangular duplo vazado à esquerda e a etiqueta "PLA/ABS/PETG/ASA"
+     */
+    function updatePrinterBed3D() {
+      if (!scene) return;
+      const profile = PRINTER_PROFILES[state.printerProfile] || PRINTER_PROFILES.kobra_x;
+      state.bedSizeMM = profile.bedWidth;
+
+      if (bedGroup) {
+        scene.remove(bedGroup);
+        bedGroup.traverse(obj => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (obj.material.map) obj.material.map.dispose();
+            if (obj.material.bumpMap) obj.material.bumpMap.dispose();
+            obj.material.dispose();
+          }
+        });
+      }
+
+      bedGroup = new THREE.Group();
+
+      const W = profile.bedWidth;
+      const D = profile.bedDepth;
+      const hw = W / 2;
+      const hd = D / 2;
+
+      // 1. Base Aquecida de Alumínio Inferior (Heatbed)
+      const heatbedGeo = new THREE.BoxGeometry(W - 2, D - 2, 3.0);
+      const heatbedMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        roughness: 0.7,
+        metalness: 0.5
+      });
+      const heatbedMesh = new THREE.Mesh(heatbedGeo, heatbedMat);
+      heatbedMesh.position.z = -3.2;
+      bedGroup.add(heatbedMesh);
+
+      // 2. Silhueta 2D Exata da Chapa de Aço Mola (Spring Steel Sheet) conforme o fabricante
+      const plateShape = new THREE.Shape();
+
+      if (profile.id === 'kobra_x') {
+        // SILHUETA IDÊNTICA À FOTO DA KOBRA X (Double Sided PEI Sheet):
+        // - Borda traseira (topo) com 2 pequenos entalhes semicírculares/em V
+        // - Borda frontal (inferior) com a aba puxadora deslocada para a direita (de X = +8 mm até X = +92 mm, projetando 12 mm para frente)
+        // - Dois recortes triangulares vazados no lado esquerdo da aba frontal
+        const r = 7;
+        const tabLeftX = 8;
+        const tabRightX = 94;
+        const tabDepth = 12.5;
+
+        // Começa no canto inferior esquerdo
+        plateShape.moveTo(-hw + r, -hd);
+        // Vai até o início da aba frontal deslocada para a direita
+        plateShape.lineTo(tabLeftX - 5, -hd);
+        plateShape.lineTo(tabLeftX, -hd - tabDepth);
+        plateShape.lineTo(tabRightX, -hd - tabDepth);
+        plateShape.lineTo(tabRightX + 5, -hd);
+        // Segue até o canto inferior direito
+        plateShape.lineTo(hw - r, -hd);
+        plateShape.quadraticCurveTo(hw, -hd, hw, -hd + r);
+
+        // Lateral direita até o canto superior direito
+        plateShape.lineTo(hw, hd - r);
+        plateShape.quadraticCurveTo(hw, hd, hw - r, hd);
+
+        // Borda traseira com os 2 entalhes em V arredondados idênticos à foto
+        const notch1X = 46;
+        const notch2X = -46;
+        plateShape.lineTo(notch1X + 4.5, hd);
+        plateShape.lineTo(notch1X + 1.5, hd - 4.2);
+        plateShape.lineTo(notch1X - 1.5, hd - 4.2);
+        plateShape.lineTo(notch1X - 4.5, hd);
+
+        plateShape.lineTo(notch2X + 4.5, hd);
+        plateShape.lineTo(notch2X + 1.5, hd - 4.2);
+        plateShape.lineTo(notch2X - 1.5, hd - 4.2);
+        plateShape.lineTo(notch2X - 4.5, hd);
+
+        // Canto superior esquerdo e lateral esquerda
+        plateShape.lineTo(-hw + r, hd);
+        plateShape.quadraticCurveTo(-hw, hd, -hw, hd - r);
+        plateShape.lineTo(-hw, -hd + r);
+        plateShape.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+
+        // Recortes triangulares duplos vazados no lado esquerdo da aba frontal (fiel à foto)
+        const triHole1 = new THREE.Path();
+        triHole1.moveTo(tabLeftX + 3, -hd - 2.2);
+        triHole1.lineTo(tabLeftX + 12, -hd - 2.2);
+        triHole1.lineTo(tabLeftX + 7.5, -hd - tabDepth + 2.5);
+        triHole1.closePath();
+        plateShape.holes.push(triHole1);
+
+        const triHole2 = new THREE.Path();
+        triHole2.moveTo(tabLeftX + 15.5, -hd - 2.2);
+        triHole2.lineTo(tabLeftX + 20, -hd - tabDepth + 2.5);
+        triHole2.lineTo(tabLeftX + 11, -hd - tabDepth + 2.5);
+        triHole2.closePath();
+        plateShape.holes.push(triHole2);
+
+      } else if (profile.id === 'bambu_a1') {
+        // SILHUETA OFICIAL BAMBU LAB A1:
+        // Aba frontal deslocada/centralizada + aba traseira de limpeza do bico + chanfros guia traseiros
+        const r = 8;
+        plateShape.moveTo(-hw + r, -hd);
+        plateShape.lineTo(-32, -hd);
+        plateShape.lineTo(-26, -hd - 11);
+        plateShape.lineTo(26, -hd - 11);
+        plateShape.lineTo(32, -hd);
+        plateShape.lineTo(hw - r, -hd);
+        plateShape.quadraticCurveTo(hw, -hd, hw, -hd + r);
+        plateShape.lineTo(hw, hd - 14);
+        // Recorte guia traseiro direito Bambu
+        plateShape.lineTo(hw - 14, hd);
+        // Aba traseira central de Nozzle Wipe da Bambu
+        plateShape.lineTo(28, hd);
+        plateShape.lineTo(24, hd + 10);
+        plateShape.lineTo(-24, hd + 10);
+        plateShape.lineTo(-28, hd);
+        // Recorte guia traseiro esquerdo Bambu
+        plateShape.lineTo(-hw + 14, hd);
+        plateShape.lineTo(-hw, hd - 14);
+        plateShape.lineTo(-hw, -hd + r);
+        plateShape.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+
+      } else {
+        // SILHUETA OFICIAL CREALITY ENDER-3 V3 KE:
+        // Duas orelhas frontais inclinadas nos cantos + 2 entalhes traseiros para os parafusos guia
+        const r = 6;
+        plateShape.moveTo(-hw + 8, -hd);
+        plateShape.lineTo(-hw + 14, -hd - 13);
+        plateShape.lineTo(-hw + 48, -hd - 13);
+        plateShape.lineTo(-hw + 54, -hd);
+        plateShape.lineTo(hw - 54, -hd);
+        plateShape.lineTo(hw - 48, -hd - 13);
+        plateShape.lineTo(hw - 14, -hd - 13);
+        plateShape.lineTo(hw - 8, -hd);
+        plateShape.quadraticCurveTo(hw, -hd, hw, -hd + r);
+        plateShape.lineTo(hw, hd - r);
+        plateShape.quadraticCurveTo(hw, hd, hw - r, hd);
+        // Entalhes traseiros Creality
+        plateShape.lineTo(hw - 35, hd);
+        plateShape.lineTo(hw - 35, hd - 6);
+        plateShape.lineTo(hw - 45, hd - 6);
+        plateShape.lineTo(hw - 45, hd);
+        plateShape.lineTo(-hw + 45, hd);
+        plateShape.lineTo(-hw + 45, hd - 6);
+        plateShape.lineTo(-hw + 35, hd - 6);
+        plateShape.lineTo(-hw + 35, hd);
+        plateShape.lineTo(-hw + r, hd);
+        plateShape.quadraticCurveTo(-hw, hd, -hw, hd - r);
+        plateShape.lineTo(-hw, -hd + r);
+        plateShape.quadraticCurveTo(-hw, -hd, -hw + 8, -hd);
+      }
+
+      const plateThickness = 1.4;
+      const plateGeo = new THREE.ExtrudeGeometry(plateShape, {
+        depth: plateThickness,
+        bevelEnabled: true,
+        bevelThickness: 0.25,
+        bevelSize: 0.25,
+        bevelSegments: 2,
+        curveSegments: 32
+      });
+
+      // Cor preta-antracite fosca da chapa de aço PEI
+      const rimColor = profile.id === 'kobra_x' ? 0x222428 : 0x27272a;
+      const steelPlateMat = new THREE.MeshStandardMaterial({
+        color: rimColor,
+        roughness: 0.58,
+        metalness: 0.45
+      });
+
+      const steelPlateMesh = new THREE.Mesh(plateGeo, steelPlateMat);
+      steelPlateMesh.position.z = -plateThickness - 0.02;
+      steelPlateMesh.receiveShadow = true;
+      bedGroup.add(steelPlateMesh);
+
+      // Se for a Anycubic Kobra X, adiciona a etiqueta prateada "PLA/ABS/PETG/ASA" sobre a aba frontal exatamente como na foto!
+      if (profile.id === 'kobra_x') {
+        const badgeCanvas = document.createElement('canvas');
+        badgeCanvas.width = 512;
+        badgeCanvas.height = 96;
+        const bCtx = badgeCanvas.getContext('2d');
+        bCtx.fillStyle = '#dde3ea';
+        bCtx.beginPath();
+        bCtx.roundRect(4, 8, 504, 80, 14);
+        bCtx.fill();
+        bCtx.fillStyle = '#1e2024';
+        bCtx.font = '800 44px "Inter", "Montserrat", sans-serif';
+        bCtx.textAlign = 'center';
+        bCtx.textBaseline = 'middle';
+        bCtx.fillText('PLA/ABS/PETG/ASA', 256, 50);
+
+        const badgeTex = new THREE.CanvasTexture(badgeCanvas);
+        const badgeGeo = new THREE.PlaneGeometry(58, 9.5);
+        const badgeMat = new THREE.MeshStandardMaterial({
+          map: badgeTex,
+          roughness: 0.4,
+          metalness: 0.2,
+          transparent: true
+        });
+        const badgeMesh = new THREE.Mesh(badgeGeo, badgeMat);
+        badgeMesh.position.set(60, -hd - 6.2, 0.02);
+        bedGroup.add(badgeMesh);
+      }
+
+      // 3. Superfície PEI Texturizada Superior (com Bump Map granulado e Serigrafia Oficial)
+      const { mapTex, bumpTex } = createPEIBedTextures(profile);
+      const topSurfaceGeo = new THREE.PlaneGeometry(W - 1.5, D - 1.5);
+      const topSurfaceMat = new THREE.MeshStandardMaterial({
+        map: mapTex,
+        bumpMap: bumpTex,
+        bumpScale: 0.18,
+        roughness: 0.62,
+        metalness: 0.28
+      });
+      const topSurfaceMesh = new THREE.Mesh(topSurfaceGeo, topSurfaceMat);
+      topSurfaceMesh.position.z = -0.01;
+      topSurfaceMesh.receiveShadow = true;
+      bedGroup.add(topSurfaceMesh);
+
+      // 4. Pinos Guia Metálicos Traseiros de Alinhamento da Chapa
+      const pinGeo = new THREE.CylinderGeometry(2.6, 2.6, 4.2, 24);
+      pinGeo.rotateX(Math.PI / 2);
+      const pinMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.25, metalness: 0.9 });
+
+      if (profile.id === 'kobra_x') {
+        const pinL = new THREE.Mesh(pinGeo, pinMat);
+        pinL.position.set(-hw + 49, hd - 2.5, -0.5);
+        const pinR = new THREE.Mesh(pinGeo, pinMat);
+        pinR.position.set(hw - 49, hd - 2.5, -0.5);
+        bedGroup.add(pinL, pinR);
+      } else if (profile.id === 'bambu_a1') {
+        const pinL = new THREE.Mesh(pinGeo, pinMat);
+        pinL.position.set(-hw + 5, hd - 5, -0.5);
+        const pinR = new THREE.Mesh(pinGeo, pinMat);
+        pinR.position.set(hw - 5, hd - 5, -0.5);
+        bedGroup.add(pinL, pinR);
+      } else {
+        const pinL = new THREE.Mesh(pinGeo, pinMat);
+        pinL.position.set(-hw + 40, hd - 3, -0.5);
+        const pinR = new THREE.Mesh(pinGeo, pinMat);
+        pinR.position.set(hw - 40, hd - 3, -0.5);
+        bedGroup.add(pinL, pinR);
+      }
+
+      scene.add(bedGroup);
+    }
+
+    function updatePrinterProfile(profileKey) {
+      const profile = PRINTER_PROFILES[profileKey] || PRINTER_PROFILES.kobra_x;
+      state.printerProfile = profile.id;
+      state.bedSizeMM = profile.bedWidth;
+
+      // Atualiza Badges do Header, Sidebar e HUD
+      const headerBadge = document.getElementById('headerPrinterBadge');
+      const headerSub = document.getElementById('headerPrinterSub');
+      const sidebarDim = document.getElementById('sidebarBedDimBadge');
+      const hudTitle = document.getElementById('hudBedTitle');
+
+      if (headerBadge) headerBadge.textContent = profile.name;
+      if (headerSub) headerSub.textContent = `Mesa PEI ${profile.bedWidth} × ${profile.bedDepth} mm • ${profile.slicerName}`;
+      if (sidebarDim) sidebarDim.textContent = `${profile.bedWidth}×${profile.bedDepth} mm`;
+      if (hudTitle) hudTitle.textContent = `${profile.name} PEI Bed (${profile.bedWidth} × ${profile.bedDepth} mm)`;
+
+      // Ajusta o limite máximo do slider da Letra Base caso a mesa seja menor (ex: Ender 3 V3 KE 220x220 mm)
+      const sizeRange = document.getElementById('baseSizeRange');
+      if (sizeRange) {
+        sizeRange.max = profile.maxRecommendedLetter;
+        if (state.baseSize > profile.maxRecommendedLetter) {
+          state.baseSize = profile.maxRecommendedLetter;
+          sizeRange.value = state.baseSize;
+          document.getElementById('baseSizeVal').textContent = `${state.baseSize} mm`;
+        }
+      }
+
+      updatePrinterBed3D();
+      recordStateChange(true);
+      rebuild3DModel();
+    }
+
+    // Mapeamento das famílias exatas do Google Fonts para extração direta do arquivo de fonte real (.ttf / .woff)
+    const GOOGLE_FONT_SPECS = {
+      // Fontes da Base
+      'Montserrat': { family: 'Montserrat', weight: 900 },
+      'Fredoka': { family: 'Fredoka', weight: 700 },
+      'Bebas': { family: 'Bebas Neue', weight: 400 },
+      'Playfair': { family: 'Playfair Display', weight: 900 },
+      'Cinzel': { family: 'Cinzel', weight: 900 },
+      'Abril': { family: 'Abril Fatface', weight: 400 },
+      'Poppins': { family: 'Poppins', weight: 900 },
+      'RobotoSlab': { family: 'Roboto Slab', weight: 900 },
+      'Righteous': { family: 'Righteous', weight: 400 },
+      'Oswald': { family: 'Oswald', weight: 700 },
+      'AlfaSlab': { family: 'Alfa Slab One', weight: 400 },
+      'Lobster': { family: 'Lobster', weight: 400 },
+      'Anton': { family: 'Anton', weight: 400 },
+      'Merriweather': { family: 'Merriweather', weight: 900 },
+      'Bangers': { family: 'Bangers', weight: 400 },
+
+      // Fontes Cursivas
+      'Pacifico': { family: 'Pacifico', weight: 400 },
+      'Dancing': { family: 'Dancing Script', weight: 700 },
+      'GreatVibes': { family: 'Great Vibes', weight: 400 },
+      'Satisfy': { family: 'Satisfy', weight: 400 },
+      'Sacramento': { family: 'Sacramento', weight: 400 },
+      'AlexBrush': { family: 'Alex Brush', weight: 400 },
+      'Parisienne': { family: 'Parisienne', weight: 400 },
+      'Caveat': { family: 'Caveat', weight: 700 },
+      'Cookie': { family: 'Cookie', weight: 400 },
+      'Allura': { family: 'Allura', weight: 400 },
+      'Yellowtail': { family: 'Yellowtail', weight: 400 },
+      'MarckScript': { family: 'Marck Script', weight: 400 },
+      'Tangerine': { family: 'Tangerine', weight: 700 },
+      'Kaushan': { family: 'Kaushan Script', weight: 400 },
+      'BadScript': { family: 'Bad Script', weight: 400 }
+    };
+
+    const fontCache = {};
+
+    /**
+     * Biblioteca de Detalhes e Apliques Chapados em ULTRA-ALTA DEFINIÇÃO (128 segmentos + Recortes Internos para Marchetaria)
+     * Retorna { framePolys: Polígonos do corpo vazado, inlayPolys: Polígonos das peças internas que encaixam nos vãos }
+     */
+    function getEmblemClipperData(type, targetSizeMM, posX, posY, rotDeg, scaleFactor = 1000) {
+      if (!type || type === 'none') return { framePolys: [], inlayPolys: [] };
+
+      const rawOuter = [];
+      const rawHoles = [];
+
+      // Utilitários de Ultra-Alta Definição (96 a 128 subdivisões suaves sem facetas)
+      const makeCircle = (cx, cy, r, steps = 96) => {
+        const pts = [];
+        for (let i = 0; i < steps; i++) {
+          const a = (i / steps) * Math.PI * 2;
+          pts.push({ X: Math.round((cx + Math.cos(a) * r) * scaleFactor), Y: Math.round((cy + Math.sin(a) * r) * scaleFactor) });
+        }
+        return pts;
+      };
+
+      const makeEllipse = (cx, cy, rx, ry, rot = 0, steps = 96) => {
+        const pts = [];
+        const cosR = Math.cos(rot), sinR = Math.sin(rot);
+        for (let i = 0; i < steps; i++) {
+          const a = (i / steps) * Math.PI * 2;
+          const lx = Math.cos(a) * rx;
+          const ly = Math.sin(a) * ry;
+          const x = cx + lx * cosR - ly * sinR;
+          const y = cy + lx * sinR + ly * cosR;
+          pts.push({ X: Math.round(x * scaleFactor), Y: Math.round(y * scaleFactor) });
+        }
+        return pts;
+      };
+
+      const makeRoundedRect = (cx, cy, w, h, r, stepsPerCorner = 20) => {
+        const pts = [];
+        const hw = w / 2, hh = h / 2;
+        const rad = Math.min(r, hw, hh);
+        const corners = [
+          { x: cx + hw - rad, y: cy + hh - rad, startAngle: 0 },
+          { x: cx - hw + rad, y: cy + hh - rad, startAngle: Math.PI / 2 },
+          { x: cx - hw + rad, y: cy - hh + rad, startAngle: Math.PI },
+          { x: cx + hw - rad, y: cy - hh + rad, startAngle: (3 * Math.PI) / 2 }
+        ];
+        for (const c of corners) {
+          for (let i = 0; i <= stepsPerCorner; i++) {
+            const a = c.startAngle + (i / stepsPerCorner) * (Math.PI / 2);
+            pts.push({
+              X: Math.round((c.x + Math.cos(a) * rad) * scaleFactor),
+              Y: Math.round((c.y + Math.sin(a) * rad) * scaleFactor)
+            });
+          }
+        }
+        return pts;
+      };
+
+      const makePoly = (coords) => coords.map(([x, y]) => ({ X: Math.round(x * scaleFactor), Y: Math.round(y * scaleFactor) }));
+
+      // ==========================================
+      // CATEGORIA 1: INFANTIL & MATERNIDADE (HD)
+      // ==========================================
+      if (type === 'bear') {
+        // Ursinho Teddy HD com orelhas, olhinhos e focinho detalhado
+        rawOuter.push(makeEllipse(0, -2, 22, 19.5, 0, 112)); // Cabeça
+        rawOuter.push(makeCircle(-17.5, 14.5, 9.0, 96));     // Orelha Esq
+        rawOuter.push(makeCircle(17.5, 14.5, 9.0, 96));      // Orelha Dir
+        // Peças internas (Inlays na cor da Letra Base)
+        rawHoles.push(makeCircle(-17.5, 14.5, 4.6, 80));     // Miolo Orelha Esq
+        rawHoles.push(makeCircle(17.5, 14.5, 4.6, 80));      // Miolo Orelha Dir
+        rawHoles.push(makeCircle(-7.8, 2.5, 2.8, 72));       // Olho Esq
+        rawHoles.push(makeCircle(7.8, 2.5, 2.8, 72));        // Olho Dir
+        rawHoles.push(makeEllipse(0, -6.5, 7.2, 5.2, 0, 96)); // Focinho
+      } else if (type === 'crown') {
+        // Coroa Real HD com arcos suaves e 3 joias internas
+        rawOuter.push(makePoly([
+          [-22, -14], [-26, 8], [-14, -2], [-7.5, 14.5], [0, -1], [7.5, 14.5], [14, -2], [26, 8], [22, -14]
+        ]));
+        rawOuter.push(makeRoundedRect(0, -12.5, 44, 5, 2.2));
+        rawOuter.push(makeCircle(-26, 10, 3.6, 72));
+        rawOuter.push(makeCircle(-7.5, 16.5, 3.6, 72));
+        rawOuter.push(makeCircle(7.5, 16.5, 3.6, 72));
+        rawOuter.push(makeCircle(26, 10, 3.6, 72));
+        // Joias internas (Inlays)
+        rawHoles.push(makeCircle(-12, -6.5, 3.0, 72));
+        rawHoles.push(makeCircle(0, -5.5, 3.6, 72));
+        rawHoles.push(makeCircle(12, -6.5, 3.0, 72));
+      } else if (type === 'balloon') {
+        // Balão de Ar Quente HD com gomos e cesto
+        rawOuter.push(makeEllipse(0, 8, 19.5, 21.5, 0, 112));
+        rawOuter.push(makePoly([[-10, -8], [10, -8], [7.5, -17], [-7.5, -17]]));
+        rawOuter.push(makeRoundedRect(0, -22, 11, 7.5, 1.8)); // Cesto
+        rawOuter.push(makePoly([[-6, -15], [-3.8, -15], [-3, -20], [-5.2, -20]]));
+        rawOuter.push(makePoly([[3.8, -15], [6, -15], [5.2, -20], [3, -20]]));
+        // Gomos internos para marchetaria
+        rawHoles.push(makeEllipse(0, 9, 5.2, 15.0, 0, 96));
+        rawHoles.push(makeEllipse(-10.5, 9, 3.4, 11.5, -0.18, 80));
+        rawHoles.push(makeEllipse(10.5, 9, 3.4, 11.5, 0.18, 80));
+      } else if (type === 'butterfly') {
+        // Borboleta HD Simétrica com Asas Vazadas
+        rawOuter.push(makeRoundedRect(0, 0, 5.5, 32, 2.7)); // Corpo
+        rawOuter.push(makeEllipse(-13.5, 8.5, 14.5, 10.5, -0.42, 112));
+        rawOuter.push(makeEllipse(13.5, 8.5, 14.5, 10.5, 0.42, 112));
+        rawOuter.push(makeEllipse(-10.5, -9.5, 10.5, 8.5, 0.42, 96));
+        rawOuter.push(makeEllipse(10.5, -9.5, 10.5, 8.5, -0.42, 96));
+        // Recortes internos das asas (Inlays)
+        rawHoles.push(makeEllipse(-14.2, 8.5, 7.2, 5.0, -0.42, 96));
+        rawHoles.push(makeEllipse(14.2, 8.5, 7.2, 5.0, 0.42, 96));
+        rawHoles.push(makeCircle(-10.5, -9.5, 4.2, 80));
+        rawHoles.push(makeCircle(10.5, -9.5, 4.2, 80));
+      } else if (type === 'cloud') {
+        // Nuvem Fofa HD com olhinhos e bochechas internas
+        rawOuter.push(makeCircle(-14, -2.5, 10.5, 96));
+        rawOuter.push(makeCircle(-5, 6.5, 12.5, 96));
+        rawOuter.push(makeCircle(8, 4.5, 11.5, 96));
+        rawOuter.push(makeCircle(16, -2.5, 9.5, 96));
+        rawOuter.push(makeRoundedRect(1, -6.5, 32, 13, 4));
+        // Detalhes internos fofos (olhinhos e sorriso)
+        rawHoles.push(makeCircle(-6.5, -1, 2.4, 64));
+        rawHoles.push(makeCircle(6.5, -1, 2.4, 64));
+        rawHoles.push(makeEllipse(0, -5, 4.2, 2.4, 0, 64));
+      } else if (type === 'star') {
+        // Estrela HD com cantos suaves e olhinhos internos
+        const pts = [];
+        const spikes = 5, outerR = 24, innerR = 11.5;
+        for (let i = 0; i < spikes * 2; i++) {
+          const r = i % 2 === 0 ? outerR : innerR;
+          const a = (i / (spikes * 2)) * Math.PI * 2 + Math.PI / 2;
+          pts.push([Math.cos(a) * r, Math.sin(a) * r]);
+        }
+        const coStar = new ClipperLib.ClipperOffset(2.0, 0.15);
+        coStar.AddPath(makePoly(pts), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+        const roundedStar = new ClipperLib.Paths();
+        coStar.Execute(roundedStar, 1.5 * scaleFactor);
+        rawOuter.push(...roundedStar);
+        rawHoles.push(makeCircle(-5.2, 1.5, 2.5, 72));
+        rawHoles.push(makeCircle(5.2, 1.5, 2.5, 72));
+        rawHoles.push(makeEllipse(0, -4.0, 3.8, 2.2, 0, 64));
+      } else if (type === 'moon') {
+        // Lua Crescente HD (128 segs) com estrelinha interna
+        const outerMoon = makeCircle(0, 0, 22, 128);
+        const cutMoon = makeCircle(9.5, 4, 18, 128);
+        const cprM = new ClipperLib.Clipper();
+        cprM.AddPath(outerMoon, ClipperLib.PolyType.ptSubject, true);
+        cprM.AddPath(cutMoon, ClipperLib.PolyType.ptClip, true);
+        const moonRes = new ClipperLib.Paths();
+        cprM.Execute(ClipperLib.ClipType.ctDifference, moonRes, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+        rawOuter.push(...moonRes);
+        rawHoles.push(makeCircle(-9.5, -2, 3.2, 72));
+      } else if (type === 'dino') {
+        // Dinossauro Kids HD com olho e manchinhas internas
+        rawOuter.push(makeEllipse(-2, -6, 16, 11.5, 0, 96));
+        rawOuter.push(makeEllipse(12, 12, 9.5, 7.5, 0, 96));
+        rawOuter.push(makePoly([[4, -4], [10.5, -4], [15, 12], [7, 12]]));
+        rawOuter.push(makePoly([[-14, -6], [-28, 2], [-12, -13]]));
+        rawOuter.push(makeRoundedRect(-7, -18.5, 6.5, 10, 2));
+        rawOuter.push(makeRoundedRect(7, -18.5, 6.5, 10, 2));
+        // Peças internas (Olho e manchas nas costas)
+        rawHoles.push(makeCircle(13.5, 13, 2.4, 64));
+        rawHoles.push(makeCircle(-4, -3, 3.6, 64));
+        rawHoles.push(makeCircle(3, -5, 2.8, 64));
+      } else if (type === 'rocket') {
+        // Foguete Espacial HD com escotilha redonda
+        rawOuter.push(makeEllipse(0, 2, 11.5, 22.5, 0, 112));
+        rawOuter.push(makePoly([[-10, -6], [-20, -18], [-8, -14]]));
+        rawOuter.push(makePoly([[10, -6], [20, -18], [8, -14]]));
+        rawHoles.push(makeCircle(0, 6.5, 5.5, 96)); // Escotilha
+        rawHoles.push(makeCircle(0, -4.5, 3.2, 72)); // Segunda janela
+      } else if (type === 'bow') {
+        // Laço de Fita HD
+        rawOuter.push(makeCircle(0, 0, 7.0, 80));
+        rawOuter.push(makeEllipse(-14, 2, 12.5, 9.5, -0.25, 96));
+        rawOuter.push(makeEllipse(14, 2, 12.5, 9.5, 0.25, 96));
+        rawOuter.push(makePoly([[-3, -4], [-12, -20], [-4, -18], [0, -5]]));
+        rawOuter.push(makePoly([[3, -4], [12, -20], [4, -18], [0, -5]]));
+        rawHoles.push(makeEllipse(-15, 2, 5.5, 3.8, -0.25, 80));
+        rawHoles.push(makeEllipse(15, 2, 5.5, 3.8, 0.25, 80));
+        rawHoles.push(makeCircle(0, 0, 3.0, 64));
+      } else if (type === 'feet') {
+        // Pezinhos de Bebê HD com corações internos na sola
+        rawOuter.push(makeEllipse(-9.5, -3, 7.0, 12.5, 0.18, 96));
+        rawOuter.push(makeEllipse(9.5, -3, 7.0, 12.5, -0.18, 96));
+        rawOuter.push(makeCircle(-5.5, 12, 3.0, 64));
+        rawOuter.push(makeCircle(-9.5, 12.5, 2.4, 64));
+        rawOuter.push(makeCircle(-13, 11.5, 2.1, 64));
+        rawOuter.push(makeCircle(-16, 9.5, 1.8, 64));
+        rawOuter.push(makeCircle(5.5, 12, 3.0, 64));
+        rawOuter.push(makeCircle(9.5, 12.5, 2.4, 64));
+        rawOuter.push(makeCircle(13, 11.5, 2.1, 64));
+        rawOuter.push(makeCircle(16, 9.5, 1.8, 64));
+        // Detalhes internos nas solas
+        rawHoles.push(makeCircle(-9.5, -2.5, 3.2, 64));
+        rawHoles.push(makeCircle(9.5, -2.5, 3.2, 64));
+      } else if (type === 'lion') {
+        // Leãozinho Safari HD
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2;
+          rawOuter.push(makeCircle(Math.cos(a) * 16, Math.sin(a) * 16, 7.8, 72));
+        }
+        rawOuter.push(makeCircle(0, 0, 16.5, 96));
+        rawHoles.push(makeCircle(-6, 3, 2.5, 64));
+        rawHoles.push(makeCircle(6, 3, 2.5, 64));
+        rawHoles.push(makeEllipse(0, -4.5, 5.2, 3.6, 0, 80));
+      }
+
+      // ==========================================
+      // CATEGORIA 2: JOVEM, GAMER & ADULTO (HD)
+      // ==========================================
+      else if (type === 'heart') {
+        // Coração HD (128 segs) com mini-coração interno para marchetaria
+        const pts = [], innerPts = [];
+        for (let i = 0; i < 128; i++) {
+          const t = (i / 128) * Math.PI * 2;
+          const x = 16 * Math.pow(Math.sin(t), 3);
+          const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+          pts.push([x * 1.32, y * 1.32]);
+          innerPts.push([x * 0.55, y * 0.55]);
+        }
+        rawOuter.push(makePoly(pts));
+        rawHoles.push(makePoly(innerPts));
+      } else if (type === 'gamepad') {
+        // Controle Gamer HD com D-Pad e Botões
+        rawOuter.push(makeEllipse(0, 2, 18.5, 11.5, 0, 112));
+        rawOuter.push(makeEllipse(-15, -6, 8.2, 14.5, 0.35, 96));
+        rawOuter.push(makeEllipse(15, -6, 8.2, 14.5, -0.35, 96));
+        // D-Pad unificado
+        const dpadH = makePoly([[-14.5, 4.2], [-7.5, 4.2], [-7.5, 0.8], [-14.5, 0.8]]);
+        const dpadV = makePoly([[-12.7, 6.0], [-9.3, 6.0], [-9.3, -1.0], [-12.7, -1.0]]);
+        const cprDpad = new ClipperLib.Clipper();
+        cprDpad.AddPath(dpadH, ClipperLib.PolyType.ptSubject, true);
+        cprDpad.AddPath(dpadV, ClipperLib.PolyType.ptSubject, true);
+        const dpadUni = new ClipperLib.Paths();
+        cprDpad.Execute(ClipperLib.ClipType.ctUnion, dpadUni, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+        rawHoles.push(...dpadUni);
+        // Botões de ação
+        rawHoles.push(makeCircle(10, 5.2, 2.4, 64));
+        rawHoles.push(makeCircle(14.2, 2, 2.4, 64));
+        rawHoles.push(makeCircle(10, -1.2, 2.4, 64));
+        rawHoles.push(makeCircle(5.8, 2, 2.4, 64));
+      } else if (type === 'paw') {
+        // Patinha Pet HD com almofada central interna
+        rawOuter.push(makeEllipse(0, -6, 13.5, 10.5, 0, 96));
+        rawOuter.push(makeEllipse(-13, 6, 5.0, 6.8, 0.3, 80));
+        rawOuter.push(makeEllipse(-4.5, 11, 5.0, 7.0, 0.1, 80));
+        rawOuter.push(makeEllipse(4.5, 11, 5.0, 7.0, -0.1, 80));
+        rawOuter.push(makeEllipse(13, 6, 5.0, 6.8, -0.3, 80));
+        rawHoles.push(makeEllipse(0, -6.5, 6.5, 4.8, 0, 80));
+      } else if (type === 'music') {
+        // Nota Musical Dupla HD com centros vazados
+        rawOuter.push(makeEllipse(-12, -12, 8.0, 6.0, 0.3, 96));
+        rawOuter.push(makeEllipse(10, -9, 8.0, 6.0, 0.3, 96));
+        rawOuter.push(makePoly([[-7.5, -12], [-3.8, -12], [-3.8, 15], [-7.5, 15]]));
+        rawOuter.push(makePoly([[14.5, -9], [18.2, -9], [18.2, 18], [14.5, 18]]));
+        rawOuter.push(makePoly([[-7.5, 11], [18.2, 14], [18.2, 19.5], [-7.5, 16.5]]));
+        rawHoles.push(makeCircle(-12, -12, 3.0, 64));
+        rawHoles.push(makeCircle(10, -9, 3.0, 64));
+      } else if (type === 'flower') {
+        // Flor / Rosa HD com miolo grande
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          rawOuter.push(makeCircle(Math.cos(a) * 11, Math.sin(a) * 11, 9.8, 96));
+        }
+        rawHoles.push(makeCircle(0, 0, 6.2, 96));
+      } else if (type === 'infinity') {
+        // Infinito HD
+        rawOuter.push(makeEllipse(-11, 0, 12.5, 9.5, 0, 96));
+        rawOuter.push(makeEllipse(11, 0, 12.5, 9.5, 0, 96));
+        rawHoles.push(makeEllipse(-11, 0, 6.5, 4.4, 0, 80));
+        rawHoles.push(makeEllipse(11, 0, 6.5, 4.4, 0, 80));
+      } else if (type === 'cross') {
+        // Cruz Clássica HD com centro decorativo
+        rawOuter.push(makeRoundedRect(0, 0, 9.5, 44, 2));
+        rawOuter.push(makeRoundedRect(0, 8, 32, 9.5, 2));
+        rawHoles.push(makeCircle(0, 8, 3.2, 64));
+      } else if (type === 'anchor') {
+        // Âncora Náutica HD
+        rawOuter.push(makeCircle(0, 16, 6.8, 80));
+        rawHoles.push(makeCircle(0, 16, 3.4, 72));
+        rawOuter.push(makePoly([[-2.8, -16], [2.8, -16], [2.8, 12], [-2.8, 12]]));
+        rawOuter.push(makePoly([[-11, 5], [11, 5], [11, 9], [-11, 9]]));
+        rawOuter.push(makePoly([
+          [-19, -4], [-14, -4], [-8, -13], [8, -13], [14, -4], [19, -4],
+          [14, -17], [0, -22], [-14, -17]
+        ]));
+      } else if (type === 'plane') {
+        // Avião HD com janelinhas internas
+        rawOuter.push(makeEllipse(0, 0, 4.6, 22.5, 0, 96));
+        rawOuter.push(makePoly([[-4, 4], [-24, -4], [-24, -8.5], [-4, -3]]));
+        rawOuter.push(makePoly([[4, 4], [24, -4], [24, -8.5], [4, -3]]));
+        rawOuter.push(makePoly([[-3, -15], [-11, -20], [-11, -22.5], [-3, -19]]));
+        rawOuter.push(makePoly([[3, -15], [11, -20], [11, -22.5], [3, -19]]));
+        rawHoles.push(makeCircle(0, 8, 2.2, 64));
+        rawHoles.push(makeCircle(0, 1, 2.2, 64));
+      } else if (type === 'dumbbell') {
+        // Halteres Fitness HD
+        rawOuter.push(makePoly([[-16, -2.8], [16, -2.8], [16, 2.8], [-16, 2.8]]));
+        rawOuter.push(makeRoundedRect(-15.5, 0, 5.5, 26, 1.5));
+        rawOuter.push(makeRoundedRect(-21.5, 0, 5.5, 18, 1.5));
+        rawOuter.push(makeRoundedRect(15.5, 0, 5.5, 26, 1.5));
+        rawOuter.push(makeRoundedRect(21.5, 0, 5.5, 18, 1.5));
+      } else if (type === 'diamond') {
+        // Diamante Lapidado HD com facetas internas
+        rawOuter.push(makePoly([[-14, 14], [14, 14], [23, 4], [0, -22], [-23, 4]]));
+        rawHoles.push(makePoly([[-9, 10.5], [9, 10.5], [14, 4.2], [-14, 4.2]]));
+        rawHoles.push(makePoly([[-11, 1], [11, 1], [0, -14]]));
+      } else if (type === 'lightning') {
+        // Raio Radical HD com núcleo interno
+        rawOuter.push(makePoly([[4, 24], [-16, -2], [-2, -2], [-8, -24], [16, 4], [2, 4]]));
+        rawHoles.push(makeCircle(0, 1, 3.0, 64));
+      }
+
+      if (rawOuter.length === 0) return { framePolys: [], inlayPolys: [] };
+
+      // 1. Faz a União da silhueta externa do aplique
+      const cprUnion = new ClipperLib.Clipper();
+      cprUnion.AddPaths(rawOuter, ClipperLib.PolyType.ptSubject, true);
+      let outerSil = new ClipperLib.Paths();
+      cprUnion.Execute(
+        ClipperLib.ClipType.ctUnion,
+        outerSil,
+        ClipperLib.PolyFillType.pftNonZero,
+        ClipperLib.PolyFillType.pftNonZero
+      );
+
+      // 2. Une os furos internos (Inlays) caso haja sobreposição
+      let unitedHoles = new ClipperLib.Paths();
+      if (rawHoles.length > 0) {
+        const cprH = new ClipperLib.Clipper();
+        cprH.AddPaths(rawHoles, ClipperLib.PolyType.ptSubject, true);
+        cprH.Execute(
+          ClipperLib.ClipType.ctUnion,
+          unitedHoles,
+          ClipperLib.PolyFillType.pftNonZero,
+          ClipperLib.PolyFillType.pftNonZero
+        );
+      }
+
+      // 3. Calcula o fator de escala e centro APENAS pela silhueta externa para que ambos (frame e inlays) usem a mesma transformação!
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const p of outerSil) {
+        for (const pt of p) {
+          if (pt.X < minX) minX = pt.X;
+          if (pt.X > maxX) maxX = pt.X;
+          if (pt.Y < minY) minY = pt.Y;
+          if (pt.Y > maxY) maxY = pt.Y;
+        }
+      }
+      const curW = Math.max((maxX - minX) / scaleFactor, 1);
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      const ratio = targetSizeMM / curW;
+
+      const scaleAndCenter = (paths) =>
+        paths.map(poly =>
+          poly.map(pt => ({
+            X: Math.round((pt.X - cx) * ratio),
+            Y: Math.round((pt.Y - cy) * ratio)
+          }))
+        );
+
+      const scaledOuter = scaleAndCenter(outerSil);
+      const scaledHoles = scaleAndCenter(unitedHoles);
+
+      // 4. Subtrai os furos da silhueta externa para formar a moldura vazada (framePolys)
+      let frameLocal = scaledOuter;
+      if (scaledHoles.length > 0) {
+        const cprCut = new ClipperLib.Clipper();
+        cprCut.AddPaths(scaledOuter, ClipperLib.PolyType.ptSubject, true);
+        cprCut.AddPaths(scaledHoles, ClipperLib.PolyType.ptClip, true);
+        const carved = new ClipperLib.Paths();
+        cprCut.Execute(
+          ClipperLib.ClipType.ctDifference,
+          carved,
+          ClipperLib.PolyFillType.pftNonZero,
+          ClipperLib.PolyFillType.pftNonZero
+        );
+        frameLocal = carved;
+      }
+
+      return {
+        framePolys: transformClipperPaths(frameLocal, rotDeg, posX, posY, scaleFactor),
+        inlayPolys: transformClipperPaths(scaledHoles, rotDeg, posX, posY, scaleFactor)
+      };
+    }
+
+    /**
+     * Mantém compatibilidade caso alguma função chame getEmblemClipperPolygons diretamente
+     */
+    function getEmblemClipperPolygons(type, targetSizeMM, posX, posY, rotDeg, scaleFactor = 1000) {
+      return getEmblemClipperData(type, targetSizeMM, posX, posY, rotDeg, scaleFactor).framePolys;
+    }
+
+    /**
+     * Separa cada ilha desconectada de um conjunto de polígonos em peças individuais
+     * e aplica compensação negativa (-xyCompensationMM) para que a peça interna encaixe sem esforço dentro do aplique!
+     */
+    function extractIndividualInlayIslands(inlayPolys, xyClearanceMM, scaleFactor = 1000) {
+      if (!inlayPolys || inlayPolys.length === 0) return [];
+
+      // Encolhe levemente a peça interna (-xyClearanceMM * 0.65) para encaixar no furo do aplique sem precisar lixar
+      const co = new ClipperLib.ClipperOffset(2.0, 0.15);
+      co.AddPaths(inlayPolys, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+      const shrunkPolys = new ClipperLib.Paths();
+      const shrinkDelta = -Math.min(xyClearanceMM * 0.65, 0.22) * scaleFactor;
+      co.Execute(shrunkPolys, shrinkDelta);
+
+      const sourcePolys = shrunkPolys.length > 0 ? shrunkPolys : inlayPolys;
+
+      // Extrai cada contorno como uma peça individual com sua caixa delimitadora (Bounding Box)
+      const pieces = [];
+      for (const poly of sourcePolys) {
+        if (poly.length < 3) continue;
+        // Só pega contornos externos positivos
+        if (ClipperLib.Clipper.Area(poly) < 0) continue;
+
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const pt of poly) {
+          if (pt.X < minX) minX = pt.X;
+          if (pt.X > maxX) maxX = pt.X;
+          if (pt.Y < minY) minY = pt.Y;
+          if (pt.Y > maxY) maxY = pt.Y;
+        }
+        const wMM = (maxX - minX) / scaleFactor;
+        const hMM = (maxY - minY) / scaleFactor;
+        if (wMM < 1.0 || hMM < 1.0) continue; // Ignora micro-fragmentos menores que 1mm
+
+        pieces.push({
+          origPoly: poly,
+          cx: (minX + maxX) / 2,
+          cy: (minY + maxY) / 2,
+          wMM,
+          hMM
+        });
+      }
+      return pieces;
+    }
+
+    /**
+     * Algoritmo de Nesting 2D por Clusterização Compacta (Mínimo Deslocamento do Bico / Travel Move):
+     * - Posiciona a primeira peça interna o mais próximo possível da Letra Base.
+     * - Agrupa todas as peças seguintes coladas umas às outras em uma única ilha compacta (espaçamento de ~2mm),
+     *   evitando que a cabeça de impressão viaje pelos cantos da mesa!
+     * - As peças que não couberem na Placa 1 vão agrupadas no centro da Placa 3!
+     */
+    function packInlaysOntoPlates(inlayPieces, baseLetterPolys, scaleFactor = 1000) {
+      const plate1Polys = [];
+      const plate3Polys = [];
+      if (!inlayPieces || inlayPieces.length === 0) return { plate1Polys, plate3Polys };
+
+      const halfBedSafe = (state.bedSizeMM / 2) - 8; // Margem de segurança de 8mm das bordas da mesa
+
+      // Ordena as peças da maior para a menor para facilitar o empacotamento compacto
+      const sortedPieces = [...inlayPieces].sort((a, b) => (b.wMM * b.hMM) - (a.wMM * a.hMM));
+
+      // Expande a Letra Base em 3.5 mm para criar zona segura sem colisão na Placa 1
+      const coGuard = new ClipperLib.ClipperOffset(2.0, 0.4);
+      coGuard.AddPaths(baseLetterPolys, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+      let occupiedPlate1 = new ClipperLib.Paths();
+      coGuard.Execute(occupiedPlate1, 3.5 * scaleFactor);
+
+      // Gera malha fina de pontos candidatos (passo de 5 mm para encaixe bem próximo)
+      const candidateSpots = [];
+      const stepMM = 5;
+      for (let y = -halfBedSafe + 4; y <= halfBedSafe - 4; y += stepMM) {
+        for (let x = -halfBedSafe + 4; x <= halfBedSafe - 4; x += stepMM) {
+          candidateSpots.push({ x, y, distCenter: Math.hypot(x, y) });
+        }
+      }
+
+      // Guarda as coordenadas (x, y) das peças já posicionadas na Placa 1 para atrair as próximas para o mesmo grupo!
+      const placedCenters = [];
+
+      // Cursor compacto próximo ao centro da Placa 3 caso transborde da Placa 1
+      const p3ClusterWidth = 70;
+      let p3CursorX = -p3ClusterWidth / 2;
+      let p3CursorY = 20;
+      let p3RowMaxH = 0;
+
+      for (const piece of sortedPieces) {
+        let placedOnPlate1 = false;
+        const halfW = piece.wMM / 2 + 2.5;
+        const halfH = piece.hMM / 2 + 2.5;
+
+        if (placedCenters.length === 0) {
+          // 1ª Peça: Ordena do ponto MAIS PRÓXIMO da Letra Base (centro) para fora
+          candidateSpots.sort((a, b) => a.distCenter - b.distCenter);
+        } else {
+          // Peças seguintes: Ordena pela MENOR distância até as peças já colocadas (formando um único bloco compacto!)
+          const anchor = placedCenters[0];
+          candidateSpots.sort((a, b) => {
+            let minDistA = Infinity;
+            let minDistB = Infinity;
+            for (const c of placedCenters) {
+              const dA = Math.hypot(a.x - c.x, a.y - c.y);
+              const dB = Math.hypot(b.x - c.x, b.y - c.y);
+              if (dA < minDistA) minDistA = dA;
+              if (dB < minDistB) minDistB = dB;
+            }
+            // Peso principal: ficar próximo das outras peças; peso secundário: continuar perto da 1ª âncora e da letra
+            const scoreA = minDistA + Math.hypot(a.x - anchor.x, a.y - anchor.y) * 0.25 + a.distCenter * 0.05;
+            const scoreB = minDistB + Math.hypot(b.x - anchor.x, b.y - anchor.y) * 0.25 + b.distCenter * 0.05;
+            return scoreA - scoreB;
+          });
+        }
+
+        for (const spot of candidateSpots) {
+          if (spot.x - halfW < -halfBedSafe || spot.x + halfW > halfBedSafe || spot.y - halfH < -halfBedSafe || spot.y + halfH > halfBedSafe) {
+            continue;
+          }
+
+          const dx = Math.round(spot.x * scaleFactor - piece.cx);
+          const dy = Math.round(spot.y * scaleFactor - piece.cy);
+          const candidatePoly = piece.origPoly.map(pt => ({ X: pt.X + dx, Y: pt.Y + dy }));
+
+          // Verifica interseção booleana com a Letra Base e com as peças já alocadas
+          const cprCheck = new ClipperLib.Clipper();
+          cprCheck.AddPath(candidatePoly, ClipperLib.PolyType.ptSubject, true);
+          cprCheck.AddPaths(occupiedPlate1, ClipperLib.PolyType.ptClip, true);
+          const intersection = new ClipperLib.Paths();
+          cprCheck.Execute(ClipperLib.ClipType.ctIntersection, intersection, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+
+          if (intersection.length === 0) {
+            plate1Polys.push(candidatePoly);
+            placedCenters.push({ x: spot.x, y: spot.y });
+
+            // Margem de segurança de 4.2 mm entre as pecinhas internas para evitar batida de bico e vazamento de filamento
+            const coPiece = new ClipperLib.ClipperOffset(2.0, 0.25);
+            coPiece.AddPath(candidatePoly, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+            const pieceGuard = new ClipperLib.Paths();
+            coPiece.Execute(pieceGuard, 4.2 * scaleFactor);
+            occupiedPlate1.push(...pieceGuard);
+
+            placedOnPlate1 = true;
+            break;
+          }
+        }
+
+        if (!placedOnPlate1) {
+          // Agrupa na Placa 3 respeitando a margem segura de 4.0 mm
+          if (p3CursorX + piece.wMM > p3ClusterWidth / 2) {
+            p3CursorX = -p3ClusterWidth / 2;
+            p3CursorY -= (p3RowMaxH + 4.0);
+            p3RowMaxH = 0;
+          }
+          const targetX = p3CursorX + piece.wMM / 2;
+          const targetY = p3CursorY - piece.hMM / 2;
+          const dx = Math.round(targetX * scaleFactor - piece.cx);
+          const dy = Math.round(targetY * scaleFactor - piece.cy);
+          const p3Poly = piece.origPoly.map(pt => ({ X: pt.X + dx, Y: pt.Y + dy }));
+          plate3Polys.push(p3Poly);
+
+          p3CursorX += piece.wMM + 4.0;
+          p3RowMaxH = Math.max(p3RowMaxH, piece.hMM);
+        }
+      }
+
+      return { plate1Polys, plate3Polys };
+    }
+
+    /* =========================================================
+       RECONSTRUÇÃO DA CENA COM CAVA BOOLEANA REAL E RELEVO
+       ========================================================= */
+    let rebuildDebounceTimer = null;
+
+    function rebuild3DModel() {
+      clearTimeout(rebuildDebounceTimer);
+      rebuildDebounceTimer = setTimeout(async () => {
+        if (!scene || !baseGroup || !nameGroup || !emblemGroup || !plate3Group) return;
+
+        const badge = document.getElementById('loadingBadge');
+        if (badge) badge.classList.remove('hidden');
+
+        try {
+          // Limpa geometrias anteriores
+          for (const grp of [baseGroup, nameGroup, emblemGroup, plate3Group]) {
+            while (grp.children.length > 0) {
+              const obj = grp.children.pop();
+              if (obj.geometry) obj.geometry.dispose();
+            }
+          }
+
+          const SCALE = 1000;
+
+          // 1. POLÍGONOS 2D DA LETRA BASE (apenas se houver letra digitada)
+          const hasBaseLetter = state.baseLetter && state.baseLetter.trim().length > 0;
+          let normBase = { paths: [], widthMM: 0, heightMM: 0 };
+          let rotatedBasePolys = [];
+          if (hasBaseLetter) {
+            const rawBasePolys = await getTextClipperPolygons(state.baseLetter.trim(), state.baseFont, state.baseWeight);
+            normBase = normalizeAndScaleClipperPaths(rawBasePolys, state.baseSize, 'height', SCALE);
+            rotatedBasePolys = transformClipperPaths(normBase.paths, state.baseRotation, 0, 0, SCALE);
+          }
+
+          // 2. POLÍGONOS 2D DO NOME CURSIVO (apenas se houver nome digitado)
+          const hasNameText = state.nameText && state.nameText.trim().length > 0;
+          let placedNamePolys = [];
+          if (hasNameText) {
+            const rawNamePolys = await getTextClipperPolygons(state.nameText.trim(), state.nameFont, state.nameWeight);
+            const targetNameW = state.nameSize || 145;
+            const normName = normalizeAndScaleClipperPaths(rawNamePolys, targetNameW, 'width', SCALE);
+            placedNamePolys = transformClipperPaths(normName.paths, state.nameRotation, state.namePosX || 0, state.namePosY, SCALE);
+          }
+
+          // 2.1 POLÍGONOS 2D DOS ATÉ 10 DETALHES DINÂMICOS (ALTA DEFINIÇÃO + PEÇAS INTERNAS DA COR DA BASE)
+          const reliefEmblemPolysList = []; // Molduras vazadas por cima da base (Z = depthZThicknessMM) -> Chapa 2
+          const reliefInlayPolysList = [];  // Peças internas na mesma cor da Letra Grande! -> Alocadas na Placa 1 (ou Placa 3 se não couber)
+          const carvedEmblemPolysList = []; // Cavam a Base (Chapa 1) com folga E geram a peça na Chapa 2
+          const individualEmblemRenderList = []; // Para permitir arrastar cada detalhe individualmente no 3D Orbit!
+
+          for (let eIdx = 0; eIdx < state.emblems.length; eIdx++) {
+            const emb = state.emblems[eIdx];
+            const embData = getEmblemClipperData(emb.type, emb.size, emb.x, emb.y, emb.rot, SCALE);
+            if (embData.framePolys.length > 0) {
+              individualEmblemRenderList.push({
+                emblemIndex: eIdx,
+                mode: emb.mode,
+                framePolys: embData.framePolys
+              });
+              if (emb.mode === 'carved') {
+                carvedEmblemPolysList.push(...embData.framePolys);
+              } else {
+                reliefEmblemPolysList.push(...embData.framePolys);
+                if (embData.inlayPolys.length > 0) {
+                  reliefInlayPolysList.push(...embData.inlayPolys);
+                }
+              }
+            }
+          }
+
+          // 3. POLÍGONOS DA CAVA TOTAL NA BASE:
+          // - O Nome + os Detalhes "Cavado (Encaixe)" são unidos e expandidos pela Folga X-Y (xyCompensationMM)
+          //   para que tanto o nome quanto os detalhes cavados entrem perfeitamente na cava da Placa 1!
+          // - Os detalhes "Por Cima (Colado)" NÃO cavam a letra base!
+          const allToCarvePolys = new ClipperLib.Paths();
+          const cprToCarve = new ClipperLib.Clipper();
+          if (placedNamePolys.length > 0) {
+            cprToCarve.AddPaths(placedNamePolys, ClipperLib.PolyType.ptSubject, true);
+          }
+          if (carvedEmblemPolysList.length > 0) {
+            cprToCarve.AddPaths(carvedEmblemPolysList, ClipperLib.PolyType.ptSubject, true);
+          }
+          if (placedNamePolys.length > 0 || carvedEmblemPolysList.length > 0) {
+            cprToCarve.Execute(
+              ClipperLib.ClipType.ctUnion,
+              allToCarvePolys,
+              ClipperLib.PolyFillType.pftNonZero,
+              ClipperLib.PolyFillType.pftNonZero
+            );
+          }
+
+          const expandedCavityPolys = new ClipperLib.Paths();
+          if (allToCarvePolys.length > 0) {
+            const co = new ClipperLib.ClipperOffset(2.0, 0.25);
+            co.AddPaths(allToCarvePolys, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+            co.Execute(expandedCavityPolys, state.xyCompensationMM * SCALE);
+          }
+
+          // 4. OPERAÇÃO BOOLEANA CSG PARA CRIAR A CAVA FÍSICA NA LETRA BASE!
+          // A Base é dividida em:
+          // - Corpo Inferior Sólido: de Z = 0 até Z = (depthZ - recessDepth) -> Sem cava (fundo cego!)
+          // - Topo Escavado: de Z = (depthZ - recessDepth) até Z = depthZ -> Subtrai (Base - Cava Total)!
+          const recessZ = Math.min(state.recessDepthMM, state.depthZThicknessMM - 2);
+          const bottomHeightZ = state.depthZThicknessMM - recessZ;
+
+          const baseMat = new THREE.MeshStandardMaterial({
+            color: new THREE.Color(state.baseColor),
+            roughness: 0.42,
+            metalness: 0.08
+          });
+
+          // Parte Inferior da Letra Base (Fundo da Cava)
+          const fullBaseShapes = clipperPathsToThreeShapes(rotatedBasePolys, SCALE);
+          if (fullBaseShapes.length > 0) {
+            const bottomGeo = new THREE.ExtrudeGeometry(fullBaseShapes, {
+              depth: bottomHeightZ,
+              bevelEnabled: false,
+              curveSegments: 32
+            });
+            const bottomMesh = new THREE.Mesh(bottomGeo, baseMat);
+            bottomMesh.position.set(0, 0, 0);
+            bottomMesh.castShadow = true;
+            bottomMesh.receiveShadow = true;
+            bottomMesh.userData.dragType = 'base';
+            baseGroup.add(bottomMesh);
+          }
+
+          // Parte Superior da Letra Base COM A CAVA SUBTRAÍDA (Difference: Base - ExpandedName)
+          const cprDiff = new ClipperLib.Clipper();
+          cprDiff.AddPaths(rotatedBasePolys, ClipperLib.PolyType.ptSubject, true);
+          cprDiff.AddPaths(expandedCavityPolys, ClipperLib.PolyType.ptClip, true);
+          const topCarvedPolys = new ClipperLib.Paths();
+          cprDiff.Execute(
+            ClipperLib.ClipType.ctDifference,
+            topCarvedPolys,
+            ClipperLib.PolyFillType.pftEvenOdd,
+            ClipperLib.PolyFillType.pftEvenOdd
+          );
+
+          const topCarvedShapes = clipperPathsToThreeShapes(topCarvedPolys, SCALE);
+          if (topCarvedShapes.length > 0) {
+            const topGeo = new THREE.ExtrudeGeometry(topCarvedShapes, {
+              depth: recessZ,
+              bevelEnabled: false,
+              curveSegments: 32
+            });
+            const topMesh = new THREE.Mesh(topGeo, baseMat);
+            topMesh.position.set(0, 0, bottomHeightZ);
+            topMesh.castShadow = true;
+            topMesh.receiveShadow = true;
+            topMesh.userData.dragType = 'base';
+            baseGroup.add(topMesh);
+          }
+
+          // Sombra visual sutil no fundo da cava para destacar a profundidade na visualização 3D
+          const cprIntersect = new ClipperLib.Clipper();
+          cprIntersect.AddPaths(rotatedBasePolys, ClipperLib.PolyType.ptSubject, true);
+          cprIntersect.AddPaths(expandedCavityPolys, ClipperLib.PolyType.ptClip, true);
+          const cavityFloorPolys = new ClipperLib.Paths();
+          cprIntersect.Execute(
+            ClipperLib.ClipType.ctIntersection,
+            cavityFloorPolys,
+            ClipperLib.PolyFillType.pftEvenOdd,
+            ClipperLib.PolyFillType.pftEvenOdd
+          );
+          const cavityFloorShapes = clipperPathsToThreeShapes(cavityFloorPolys, SCALE);
+          if (cavityFloorShapes.length > 0) {
+            const floorGeo = new THREE.ShapeGeometry(cavityFloorShapes);
+            const floorMat = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(state.baseColor).multiplyScalar(0.55),
+              roughness: 0.9
+            });
+            const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+            floorMesh.position.set(0, 0, bottomHeightZ + 0.05);
+            floorMesh.userData.isVisualHelperOnly = true; // Não entra no STL para não duplicar faces
+            baseGroup.add(floorMesh);
+          }
+
+          // 5. CONSTRUÇÃO DO NOME CURSIVO E APLIQUES CHAPADOS (CHAPA 2)
+          const nameShapes = clipperPathsToThreeShapes(placedNamePolys, SCALE);
+          const nameMat = new THREE.MeshStandardMaterial({
+            color: new THREE.Color(state.overlayColor),
+            roughness: 0.35,
+            metalness: 0.05
+          });
+
+          if (nameShapes.length > 0) {
+            const nameGeo = new THREE.ExtrudeGeometry(nameShapes, {
+              depth: state.nameZThicknessMM,
+              bevelEnabled: true,
+              bevelThickness: 0.18,
+              bevelSize: 0.14,
+              bevelSegments: 3,
+              curveSegments: 36
+            });
+
+            const nameMesh = new THREE.Mesh(nameGeo, nameMat);
+            nameMesh.castShadow = true;
+            nameMesh.receiveShadow = true;
+            nameMesh.userData.dragType = 'name';
+
+            if (state.viewMode === 'assemble') {
+              nameMesh.position.set(0, 0, bottomHeightZ);
+            } else {
+              nameMesh.position.set(0, 0, 0);
+            }
+
+            nameGroup.add(nameMesh);
+          }
+
+          // 6. DETALHES / APLIQUES NA CHAPA 2 (Malhas individuais para permitir seleção e arraste no 3D Orbit!)
+          for (const item of individualEmblemRenderList) {
+            const itemShapes = clipperPathsToThreeShapes(item.framePolys, SCALE);
+            if (itemShapes.length > 0) {
+              const itemGeo = new THREE.ExtrudeGeometry(itemShapes, {
+                depth: state.nameZThicknessMM,
+                bevelEnabled: true,
+                bevelThickness: 0.16,
+                bevelSize: 0.12,
+                bevelSegments: 3,
+                curveSegments: 48
+              });
+              const itemMesh = new THREE.Mesh(itemGeo, nameMat.clone());
+              itemMesh.castShadow = true;
+              itemMesh.receiveShadow = true;
+              itemMesh.userData.dragType = 'emblem';
+              itemMesh.userData.emblemIndex = item.emblemIndex;
+              const zPos = state.viewMode === 'assemble'
+                ? (item.mode === 'carved' ? bottomHeightZ : state.depthZThicknessMM)
+                : 0;
+              itemMesh.position.set(0, 0, zPos);
+              emblemGroup.add(itemMesh);
+            }
+          }
+
+          // 6.3 PEÇAS INTERNAS DOS ITENS "POR CIMA (COLADO)" NA MESMA COR DA LETRA GRANDE!
+          const inlayPieces = extractIndividualInlayIslands(reliefInlayPolysList, state.xyCompensationMM, SCALE);
+          const packedInlays = packInlaysOntoPlates(inlayPieces, rotatedBasePolys, SCALE);
+
+          // No Assemble View, exibe as peças internas encaixadas dentro do aplique na cor da Letra Grande!
+          if (state.viewMode === 'assemble' && inlayPieces.length > 0) {
+            const assembledInlayPolys = inlayPieces.map(p => p.origPoly);
+            const assembledInlayShapes = clipperPathsToThreeShapes(assembledInlayPolys, SCALE);
+            if (assembledInlayShapes.length > 0) {
+              const inlayAssGeo = new THREE.ExtrudeGeometry(assembledInlayShapes, {
+                depth: state.nameZThicknessMM,
+                bevelEnabled: true,
+                bevelThickness: 0.14,
+                bevelSize: 0.10,
+                bevelSegments: 2,
+                curveSegments: 48
+              });
+              const inlayAssMesh = new THREE.Mesh(inlayAssGeo, baseMat);
+              inlayAssMesh.position.set(0, 0, state.depthZThicknessMM);
+              inlayAssMesh.castShadow = true;
+              inlayAssMesh.receiveShadow = true;
+              InlayMarkVisualOnly(inlayAssMesh);
+              emblemGroup.add(inlayAssMesh);
+            }
+          }
+
+          // Na Placa 1 (e na exportação STL da Chapa 1), adiciona as peças internas que couberam na mesa (Z = 0) junto com a Letra Base!
+          if (packedInlays.plate1Polys.length > 0) {
+            const p1InlayShapes = clipperPathsToThreeShapes(packedInlays.plate1Polys, SCALE);
+            if (p1InlayShapes.length > 0) {
+              const p1InlayGeo = new THREE.ExtrudeGeometry(p1InlayShapes, {
+                depth: state.nameZThicknessMM,
+                bevelEnabled: true,
+                bevelThickness: 0.14,
+                bevelSize: 0.10,
+                bevelSegments: 2,
+                curveSegments: 48
+              });
+              const p1InlayMesh = new THREE.Mesh(p1InlayGeo, baseMat);
+              p1InlayMesh.position.set(0, 0, 0);
+              p1InlayMesh.castShadow = true;
+              p1InlayMesh.receiveShadow = true;
+              // Visível na Placa 1 e sempre incluído no STL da Placa 1 (no Assemble View fica oculto na mesa pois já aparece montado no topo!)
+              p1InlayMesh.visible = (state.viewMode !== 'assemble');
+              baseGroup.add(p1InlayMesh);
+            }
+          }
+
+          // Na Placa 3 (caso não tenham cabido todas na Placa 1), adiciona as peças excedentes na cor da Letra Base (Z = 0)!
+          const hasPlate3 = packedInlays.plate3Polys.length > 0;
+          if (hasPlate3) {
+            const p3InlayShapes = clipperPathsToThreeShapes(packedInlays.plate3Polys, SCALE);
+            if (p3InlayShapes.length > 0) {
+              const p3InlayGeo = new THREE.ExtrudeGeometry(p3InlayShapes, {
+                depth: state.nameZThicknessMM,
+                bevelEnabled: true,
+                bevelThickness: 0.14,
+                bevelSize: 0.10,
+                bevelSegments: 2,
+                curveSegments: 48
+              });
+              const p3InlayMesh = new THREE.Mesh(p3InlayGeo, baseMat);
+              p3InlayMesh.position.set(0, 0, 0);
+              p3InlayMesh.castShadow = true;
+              p3InlayMesh.receiveShadow = true;
+              plate3Group.add(p3InlayMesh);
+            }
+          }
+
+          // Mostra ou oculta o botão da Placa 3 dinamicamente conforme haja peças excedentes
+          const btnP3 = document.getElementById('btnViewPlate3');
+          const btnExp3 = document.getElementById('btnExportSTL3');
+          if (btnP3) btnP3.classList.toggle('hidden', !hasPlate3);
+          if (btnExp3) btnExp3.classList.toggle('hidden', !hasPlate3);
+          if (!hasPlate3 && state.viewMode === 'plate3') {
+            state.viewMode = 'plate1';
+          }
+
+          // Atualiza o contador de peças internas na barra inferior
+          const inlayBadge = document.getElementById('inlayStatusBadge');
+          if (inlayBadge) {
+            if (inlayPieces.length === 0) {
+              inlayBadge.innerHTML = `Peças Internas (Cor Base): <strong class="text-slate-500">0</strong>`;
+            } else if (!hasPlate3) {
+              inlayBadge.innerHTML = `Peças Internas: <strong class="text-emerald-400">${packedInlays.plate1Polys.length} na Placa 1 (100% aproveitado)</strong>`;
+            } else {
+              inlayBadge.innerHTML = `Peças Internas: <strong class="text-amber-400">${packedInlays.plate1Polys.length} na Placa 1 + ${packedInlays.plate3Polys.length} na Placa 3</strong>`;
+            }
+          }
+
+          // Visibilidade das Placas
+          if (state.viewMode === 'assemble') {
+            baseGroup.visible = true;
+            nameGroup.visible = true;
+            emblemGroup.visible = true;
+            plate3Group.visible = false;
+          } else if (state.viewMode === 'plate1') {
+            baseGroup.visible = true;
+            nameGroup.visible = false;
+            emblemGroup.visible = false;
+            plate3Group.visible = false;
+          } else if (state.viewMode === 'plate2') {
+            baseGroup.visible = false;
+            nameGroup.visible = true;
+            emblemGroup.visible = true;
+            plate3Group.visible = false;
+          } else if (state.viewMode === 'plate3') {
+            baseGroup.visible = false;
+            nameGroup.visible = false;
+            emblemGroup.visible = false;
+            plate3Group.visible = true;
+          }
+
+          // Atualiza Labels de Dimensões Reais
+          const dimsLabel = document.getElementById('meshDimsLabel');
+          const totalZLabel = document.getElementById('meshTotalZLabel');
+          if (dimsLabel) {
+            if (hasBaseLetter) {
+              dimsLabel.textContent = `${Math.round(normBase.widthMM)} × ${Math.round(normBase.heightMM)} × ${state.depthZThicknessMM} mm`;
+            } else {
+              dimsLabel.textContent = `0 × 0 × 0 mm`;
+            }
+          }
+          if (totalZLabel) {
+            const currentTotalZ = hasBaseLetter
+              ? (hasNameText || state.emblems.length > 0 ? (bottomHeightZ + state.nameZThicknessMM) : state.depthZThicknessMM)
+              : (hasNameText || state.emblems.length > 0 ? state.nameZThicknessMM : 0);
+            totalZLabel.textContent = `${currentTotalZ.toFixed(1)} mm`;
+          }
+
+          // Reaplica a marcação 3D na peça selecionada após reconstruir a geometria
+          update3DSelectionHighlight();
+        } finally {
+          if (badge) badge.classList.add('hidden');
+        }
+      }, 60);
+    }
+
+    function InlayMarkVisualOnly(mesh) {
+      mesh.userData.isVisualHelperOnly = true;
+    }
+
+    /* =========================================================
+       SELETOR DE PLACAS / ASSEMBLE VIEW
+       ========================================================= */
+    function setViewMode(mode) {
+      state.viewMode = mode;
+      const bAss = document.getElementById('btnViewAssemble');
+      const bP1 = document.getElementById('btnViewPlate1');
+      const bP2 = document.getElementById('btnViewPlate2');
+      const bP3 = document.getElementById('btnViewPlate3');
+
+      const activeClass = 'px-3 py-1 rounded-lg font-bold text-white bg-amber-600 transition shadow-sm';
+      const inactiveClass = 'px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition';
+
+      if (bAss) bAss.className = mode === 'assemble' ? activeClass : inactiveClass;
+      if (bP1) bP1.className = mode === 'plate1' ? activeClass : inactiveClass;
+      if (bP2) bP2.className = mode === 'plate2' ? activeClass : inactiveClass;
+      if (bP3) {
+        const isHidden = bP3.classList.contains('hidden');
+        bP3.className = (mode === 'plate3' ? activeClass : inactiveClass) + (isHidden ? ' hidden' : '');
+      }
+
+      rebuild3DModel();
+    }
+
+    /* =========================================================
+       EXPORTADORES: STL BINÁRIO SÓLIDO & SCRIPT OPENSCAD
+       ========================================================= */
+    function exportSTL(plateNumber) {
+      const profile = PRINTER_PROFILES[state.printerProfile] || PRINTER_PROFILES.kobra_x;
+      let targetGroups;
+      let filename;
+
+      if (plateNumber === 1) {
+        targetGroups = [baseGroup];
+        filename = `Chapa1_Base_${state.baseLetter}_Com_Internos_${profile.fileTag}.stl`;
+      } else if (plateNumber === 2) {
+        targetGroups = [nameGroup, emblemGroup];
+        filename = `Chapa2_Nome_Apliques_${state.nameText}_${profile.fileTag}.stl`;
+      } else {
+        targetGroups = [plate3Group];
+        filename = `Chapa3_Internos_Extras_CorBase_${state.baseLetter}_${profile.fileTag}.stl`;
+      }
+
+      let stlString = "solid Model\n";
+      for (const grp of targetGroups) {
+        if (!grp) continue;
+        grp.updateMatrixWorld(true);
+        grp.traverse((child) => {
+          if (child.isMesh && child.geometry && !child.userData.isVisualHelperOnly) {
+            const geo = child.geometry.clone();
+            geo.applyMatrix4(child.matrixWorld);
+            const nonIndexed = geo.index ? geo.toNonIndexed() : geo;
+            const pos = nonIndexed.attributes.position;
+            for (let i = 0; i < pos.count; i += 3) {
+              stlString += `facet normal 0 0 1\n  outer loop\n`;
+              stlString += `    vertex ${pos.getX(i).toFixed(4)} ${pos.getY(i).toFixed(4)} ${pos.getZ(i).toFixed(4)}\n`;
+              stlString += `    vertex ${pos.getX(i+1).toFixed(4)} ${pos.getY(i+1).toFixed(4)} ${pos.getZ(i+1).toFixed(4)}\n`;
+              stlString += `    vertex ${pos.getX(i+2).toFixed(4)} ${pos.getY(i+2).toFixed(4)} ${pos.getZ(i+2).toFixed(4)}\n`;
+              stlString += `  endloop\nendfacet\n`;
+            }
+          }
+        });
+      }
+      stlString += "endsolid Model\n";
+
+      const blob = new Blob([stlString], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    /**
+     * Carregador de Fontes Vetoriais Reais via Google Fonts API + Fontsource CDN
+     */
+    async function getLoadedOpentypeFont(fontKey) {
+      if (fontCache[fontKey]) return fontCache[fontKey];
+
+      const spec = GOOGLE_FONT_SPECS[fontKey] || GOOGLE_FONT_SPECS['Montserrat'];
+      const slug = spec.family.toLowerCase().replace(/\s+/g, '-');
+
+      const candidateUrls = [
+        `https://cdn.jsdelivr.net/npm/@fontsource/${slug}/files/${slug}-latin-${spec.weight}-normal.woff`,
+        `https://cdn.jsdelivr.net/npm/@fontsource/${slug}/files/${slug}-latin-400-normal.woff`,
+        `https://cdn.jsdelivr.net/npm/@fontsource/${slug}/files/${slug}-all-${spec.weight}-normal.woff`
+      ];
+
+      // 1. Tenta extrair o TTF/WOFF diretamente da API CSS do Google Fonts
+      try {
+        const cssUrl = `https://fonts.googleapis.com/css?family=${encodeURIComponent(spec.family)}:${spec.weight}`;
+        const cssText = await fetch(cssUrl).then(r => r.text());
+        const match = cssText.match(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.(?:ttf|woff))\)/i);
+        if (match && match[1]) {
+          candidateUrls.unshift(match[1]);
+        }
+      } catch (e) {
+        // Ignora e segue para os candidatos do jsDelivr Fontsource
+      }
+
+      for (const url of candidateUrls) {
+        try {
+          const buffer = await fetch(url).then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.arrayBuffer();
+          });
+          const font = opentype.parse(buffer);
+          if (font && font.supported) {
+            fontCache[fontKey] = font;
+            return font;
+          }
+        } catch (err) {
+          // Tenta a próxima URL candidata
+        }
+      }
+
+      console.warn(`Não foi possível carregar ${fontKey}, tentando fallback...`);
+      return null;
+    }
+
+    /**
+     * Converte um opentype.Path em lista de Polígonos Clipper [{X, Y}, ...]
+     * já com o eixo Y na orientação correta de leitura (Y crescendo para cima)
+     * e aplicando união booleana automática (para unir letras cursivas sobrepostas!)
+     */
+    function opentypePathToClipperPolygons(otPath, scaleFactor = 1000, offsetDelta = 0) {
+      const commands = otPath.commands || [];
+      const subpaths = [];
+      let currentPts = [];
+      let curX = 0, curY = 0;
+      let startX = 0, startY = 0;
+
+      // Amostragem de alta precisão de curvas de Bézier para polígonos limpos (32 subdivisões por curva)
+      const CURVE_STEPS = 28;
+
+      for (let i = 0; i < commands.length; i++) {
+        const cmd = commands[i];
+        if (cmd.type === 'M') {
+          if (currentPts.length >= 3) subpaths.push(currentPts);
+          currentPts = [];
+          curX = cmd.x;
+          curY = -cmd.y; // INVERTE O EIXO Y AQUI NA ORIGEM PARA FICAR NA ORIENTAÇÃO CORRETA!
+          startX = curX;
+          startY = curY;
+          currentPts.push({ X: Math.round(curX * scaleFactor), Y: Math.round(curY * scaleFactor) });
+        } else if (cmd.type === 'L') {
+          curX = cmd.x;
+          curY = -cmd.y;
+          currentPts.push({ X: Math.round(curX * scaleFactor), Y: Math.round(curY * scaleFactor) });
+        } else if (cmd.type === 'Q') {
+          const x0 = curX, y0 = curY;
+          const x1 = cmd.x1, y1 = -cmd.y1;
+          const x2 = cmd.x, y2 = -cmd.y;
+          for (let s = 1; s <= CURVE_STEPS; s++) {
+            const t = s / CURVE_STEPS;
+            const mt = 1 - t;
+            const px = mt * mt * x0 + 2 * mt * t * x1 + t * t * x2;
+            const py = mt * mt * y0 + 2 * mt * t * y1 + t * t * y2;
+            currentPts.push({ X: Math.round(px * scaleFactor), Y: Math.round(py * scaleFactor) });
+          }
+          curX = x2;
+          curY = y2;
+        } else if (cmd.type === 'C') {
+          const x0 = curX, y0 = curY;
+          const x1 = cmd.x1, y1 = -cmd.y1;
+          const x2 = cmd.x2, y2 = -cmd.y2;
+          const x3 = cmd.x, y3 = -cmd.y;
+          for (let s = 1; s <= CURVE_STEPS; s++) {
+            const t = s / CURVE_STEPS;
+            const mt = 1 - t;
+            const px = mt * mt * mt * x0 + 3 * mt * mt * t * x1 + 3 * mt * t * t * x2 + t * t * t * x3;
+            const py = mt * mt * mt * y0 + 3 * mt * mt * t * y1 + 3 * mt * t * t * y2 + t * t * t * y3;
+            currentPts.push({ X: Math.round(px * scaleFactor), Y: Math.round(py * scaleFactor) });
+          }
+          curX = x3;
+          curY = y3;
+        } else if (cmd.type === 'Z') {
+          if (currentPts.length >= 3) {
+            subpaths.push(currentPts);
+          }
+          currentPts = [];
+          curX = startX;
+          curY = startY;
+        }
+      }
+      if (currentPts.length >= 3) subpaths.push(currentPts);
+
+      if (subpaths.length === 0) return [];
+
+      // Simplifica auto-interseções e une letras cursivas que se sobrepõem (ex: Pacifico, Dancing Script)
+      const cpr = new ClipperLib.Clipper();
+      cpr.AddPaths(subpaths, ClipperLib.PolyType.ptSubject, true);
+      let solution = new ClipperLib.Paths();
+      cpr.Execute(
+        ClipperLib.ClipType.ctUnion,
+        solution,
+        ClipperLib.PolyFillType.pftNonZero,
+        ClipperLib.PolyFillType.pftNonZero
+      );
+
+      // Se houver offset de peso de traço ou tolerância de encaixe (xyCompensationMM), aplica ClipperOffset
+      if (Math.abs(offsetDelta) > 0.001) {
+        const co = new ClipperLib.ClipperOffset(2.0, 0.25);
+        co.AddPaths(solution, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+        const offsetPaths = new ClipperLib.Paths();
+        co.Execute(offsetPaths, offsetDelta * scaleFactor);
+        solution = offsetPaths;
+      }
+
+      return solution;
+    }
+
+    /**
+     * Centraliza um conjunto de polígonos Clipper em torno de (0, 0) e escala para uma dimensão alvo (em mm)
+     */
+    function normalizeAndScaleClipperPaths(paths, targetSpanMM, fitAxis = 'height', scaleFactor = 1000) {
+      if (!paths || paths.length === 0) return { paths: [], widthMM: 0, heightMM: 0 };
+
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const p of paths) {
+        for (const pt of p) {
+          if (pt.X < minX) minX = pt.X;
+          if (pt.X > maxX) maxX = pt.X;
+          if (pt.Y < minY) minY = pt.Y;
+          if (pt.Y > maxY) maxY = pt.Y;
+        }
+      }
+
+      const curW = (maxX - minX) / scaleFactor;
+      const curH = (maxY - minY) / scaleFactor;
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+
+      const refSpan = fitAxis === 'height' ? Math.max(curH, 1) : Math.max(curW, 1);
+      const ratio = targetSpanMM / refSpan;
+
+      const transformed = paths.map(poly =>
+        poly.map(pt => ({
+          X: Math.round((pt.X - cx) * ratio),
+          Y: Math.round((pt.Y - cy) * ratio)
+        }))
+      );
+
+      return {
+        paths: transformed,
+        widthMM: curW * ratio,
+        heightMM: curH * ratio
+      };
+    }
+
+    /**
+     * Rotaciona e translada polígonos Clipper no plano 2D (em mm)
+     */
+    function transformClipperPaths(paths, degAngle, txMM, tyMM, scaleFactor = 1000) {
+      const rad = THREE.MathUtils.degToRad(degAngle || 0);
+      const cosA = Math.cos(rad);
+      const sinA = Math.sin(rad);
+      const tx = txMM * scaleFactor;
+      const ty = tyMM * scaleFactor;
+
+      return paths.map(poly =>
+        poly.map(pt => ({
+          X: Math.round(pt.X * cosA - pt.Y * sinA + tx),
+          Y: Math.round(pt.X * sinA + pt.Y * cosA + ty)
+        }))
+      );
+    }
+
+    /**
+     * Converte Polígonos Clipper (incluindo contornos externos e furos aninhados)
+     * em THREE.Shape[] perfeitos usando PolyTree hierárquico do Clipper!
+     * Isso garante que o furo do "R", "A", "B", "O", "e", "a" NUNCA suma e que a cava seja furada!
+     */
+    function clipperPathsToThreeShapes(paths, scaleFactor = 1000) {
+      if (!paths || paths.length === 0) return [];
+
+      const cpr = new ClipperLib.Clipper();
+      cpr.AddPaths(paths, ClipperLib.PolyType.ptSubject, true);
+      const polyTree = new ClipperLib.PolyTree();
+      cpr.Execute(
+        ClipperLib.ClipType.ctUnion,
+        polyTree,
+        ClipperLib.PolyFillType.pftEvenOdd,
+        ClipperLib.PolyFillType.pftEvenOdd
+      );
+
+      const shapes = [];
+
+      function processNode(node) {
+        if (!node.IsHole() && node.Contour().length >= 3) {
+          const contour = node.Contour();
+          const shape = new THREE.Shape();
+          contour.forEach((pt, idx) => {
+            const x = pt.X / scaleFactor;
+            const y = pt.Y / scaleFactor;
+            if (idx === 0) shape.moveTo(x, y);
+            else shape.lineTo(x, y);
+          });
+          shape.closePath();
+
+          // Os filhos diretos de um contorno externo no PolyTree são seus FUROS (holes)!
+          const children = node.Childs();
+          for (let i = 0; i < children.length; i++) {
+            const holeNode = children[i];
+            const holeContour = holeNode.Contour();
+            if (holeContour.length >= 3) {
+              const holePath = new THREE.Path();
+              holeContour.forEach((pt, idx) => {
+                const x = pt.X / scaleFactor;
+                const y = pt.Y / scaleFactor;
+                if (idx === 0) holePath.moveTo(x, y);
+                else holePath.lineTo(x, y);
+              });
+              holePath.closePath();
+              shape.holes.push(holePath);
+            }
+            // Se houver ilhas sólidas dentro de um furo (netos), processa recursivamente
+            const grandChildren = holeNode.Childs();
+            for (let j = 0; j < grandChildren.length; j++) {
+              processNode(grandChildren[j]);
+            }
+          }
+
+          shapes.push(shape);
+        } else {
+          const children = node.Childs();
+          for (let i = 0; i < children.length; i++) {
+            processNode(children[i]);
+          }
+        }
+      }
+
+      processNode(polyTree);
+      return shapes;
+    }
+
+    /**
+     * Gera os polígonos Clipper de um texto em uma fonte específica
+     */
+    async function getTextClipperPolygons(text, fontKey, weightPercent = 100) {
+      const otFont = await getLoadedOpentypeFont(fontKey);
+      const weightDelta = (weightPercent - 100) * 0.035; // Ajuste fino de espessura de traço
+
+      if (otFont) {
+        const otPath = otFont.getPath(text, 0, 0, 120);
+        return opentypePathToClipperPolygons(otPath, 1000, weightDelta);
+      }
+
+      return [];
+    }
+
+    function exportSCAD() {
+      const profile = PRINTER_PROFILES[state.printerProfile] || PRINTER_PROFILES.kobra_x;
+      const code = `// ====================================================================
+// Parametric Model Maker - ${profile.name} (${profile.bedWidth}x${profile.bedDepth} mm)
+// ====================================================================
+
+letter = "${state.baseLetter}";
+name = "${state.nameText}";
+
+letter_font = "${state.baseFont}:style=Black";
+name_font = "${state.nameFont}";
+
+letter_size_mm = ${state.baseSize};
+letter_height_mm = ${state.depthZThicknessMM};
+name_height_mm = ${state.nameZThicknessMM};
+recess_depth_mm = ${state.recessDepthMM};
+name_pos_y_mm = ${state.namePosY};
+tolerance_mm = ${state.xyCompensationMM};
+
+module plate1_base() {
+    difference() {
+        linear_extrude(height = letter_height_mm)
+            rotate([0, 0, ${state.baseRotation}])
+            text(letter, size = letter_size_mm, font = letter_font, halign = "center", valign = "center");
+
+        translate([0, name_pos_y_mm, letter_height_mm - recess_depth_mm + 0.01])
+            linear_extrude(height = recess_depth_mm + 1)
+            offset(r = tolerance_mm)
+            text(name, size = letter_size_mm * 0.35, font = name_font, halign = "center", valign = "center");
+    }
+}
+
+module plate2_name() {
+    linear_extrude(height = name_height_mm)
+        text(name, size = letter_size_mm * 0.35, font = name_font, halign = "center", valign = "center");
+}
+
+// Visualização de Montagem
+plate1_base();
+translate([0, name_pos_y_mm, letter_height_mm - recess_depth_mm])
+plate2_name();
+`;
+
+      const blob = new Blob([code], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `V3LetterandName_${state.baseLetter}_${state.nameText}_${profile.fileTag}.scad`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    /* =========================================================
+       ATUALIZADORES DE PARÂMETROS
+       ========================================================= */
+    function updateParam(param, value) {
+      if (param === 'baseLetter') {
+        state.baseLetter = (value || '').toUpperCase().trim().slice(0, 1);
+      } else if (param === 'baseSize') {
+        state.baseSize = parseFloat(value) || 190;
+        document.getElementById('baseSizeVal').textContent = `${state.baseSize} mm`;
+      } else if (param === 'baseRotation') {
+        state.baseRotation = parseFloat(value) || 0;
+        document.getElementById('baseRotVal').textContent = `${state.baseRotation}°`;
+      } else if (param === 'baseWeight') {
+        state.baseWeight = parseFloat(value) || 100;
+        document.getElementById('baseWeightVal').textContent = `${state.baseWeight}%`;
+      } else if (param === 'nameWeight') {
+        state.nameWeight = parseFloat(value) || 100;
+        document.getElementById('nameWeightVal').textContent = `${state.nameWeight}%`;
+      } else if (param === 'depthZThicknessMM') {
+        state.depthZThicknessMM = parseFloat(value) || 20;
+        document.getElementById('baseZVal').textContent = `${state.depthZThicknessMM} mm`;
+      } else if (param === 'nameText') {
+        state.nameText = value || '';
+      } else if (param === 'nameSize') {
+        state.nameSize = parseFloat(value) || 145;
+        const elSize = document.getElementById('nameSizeVal');
+        if (elSize) elSize.textContent = `${Math.round(state.nameSize)} mm`;
+      } else if (param === 'nameZThicknessMM') {
+        state.nameZThicknessMM = parseFloat(value) || 4.0;
+        document.getElementById('nameZVal').textContent = `${state.nameZThicknessMM.toFixed(1)} mm`;
+      } else if (param === 'namePosX') {
+        state.namePosX = parseFloat(value) || 0;
+        const elX = document.getElementById('namePosXVal');
+        if (elX) elX.textContent = `${Math.round(state.namePosX)} mm`;
+      } else if (param === 'namePosY') {
+        state.namePosY = parseFloat(value) || 0;
+        document.getElementById('namePosYVal').textContent = `${Math.round(state.namePosY)} mm`;
+      } else if (param === 'nameRotation') {
+        state.nameRotation = parseFloat(value) || 0;
+        document.getElementById('nameRotVal').textContent = `${Math.round(state.nameRotation)}°`;
+      } else if (param === 'recessDepthMM') {
+        state.recessDepthMM = parseFloat(value) || 2.5;
+        document.getElementById('recessDepthVal').textContent = `${state.recessDepthMM.toFixed(1)} mm`;
+      } else if (param === 'xyCompensationMM') {
+        state.xyCompensationMM = parseFloat(value) || 0.26;
+        document.getElementById('xyCompVal').textContent = `${state.xyCompensationMM.toFixed(2)} mm`;
+      } else if (param === 'baseFont') {
+        state.baseFont = value;
+      } else if (param === 'nameFont') {
+        state.nameFont = value;
+      }
+      recordStateChange(param === 'baseFont' || param === 'nameFont');
+      rebuild3DModel();
+    }
+
+    function updateColor(type, hex) {
+      if (type === 'base') {
+        state.baseColor = hex;
+        document.getElementById('baseColorHex').textContent = hex;
+      } else {
+        state.overlayColor = hex;
+        document.getElementById('overlayColorHex').textContent = hex;
+      }
+      recordStateChange(false);
+      rebuild3DModel();
+    }
+
+    function applyPalette(bColor, oColor) {
+      state.baseColor = bColor;
+      state.overlayColor = oColor;
+      document.getElementById('baseColorInput').value = bColor;
+      document.getElementById('baseColorHex').textContent = bColor;
+      document.getElementById('overlayColorInput').value = oColor;
+      document.getElementById('overlayColorHex').textContent = oColor;
+      recordStateChange(true);
+      rebuild3DModel();
+    }
+
+    /* =========================================================
+       INTERAÇÃO DIRETA COM O MOUSE NO 3D ORBIT (RAYCASTER DRAG)
+       - Arrastar Nome ou Detalhe: Move X e Y em tempo real na mesa
+       - Shift + Arrastar: Gira o Nome, Detalhe ou Letra Base
+       - Alt + Scroll sobre um item: Escala o tamanho do item
+       ========================================================= */
+    const raycaster = new THREE.Raycaster();
+    const pointerNDC = new THREE.Vector2();
+    const dragPlaneZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const dragIntersectionPt = new THREE.Vector3();
+
+    let activeDragTarget = null; // { type: 'name' | 'emblem' | 'base', emblemIndex, mesh, startPlanePt, startX, startY, startRot, meshStartPos }
+    let hoveredInteractiveMesh = null;
+
+    function updatePointerNDC(event, domElem) {
+      const rect = domElem.getBoundingClientRect();
+      pointerNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    function getInteractiveMeshes() {
+      const list = [];
+      if (nameGroup && nameGroup.visible) {
+        nameGroup.children.forEach(m => { if (m.isMesh && m.userData.dragType) list.push(m); });
+      }
+      if (emblemGroup && emblemGroup.visible) {
+        emblemGroup.children.forEach(m => { if (m.isMesh && m.userData.dragType) list.push(m); });
+      }
+      if (baseGroup && baseGroup.visible) {
+        baseGroup.children.forEach(m => { if (m.isMesh && m.userData.dragType === 'base') list.push(m); });
+      }
+      return list;
+    }
+
+    function showDragHud(text) {
+      const hud = document.getElementById('dragHudTooltip');
+      const label = document.getElementById('dragHudText');
+      if (hud && label) {
+        label.textContent = text;
+        hud.classList.remove('hidden');
+      }
+    }
+
+    function hideDragHud() {
+      const hud = document.getElementById('dragHudTooltip');
+      if (hud) hud.classList.add('hidden');
+    }
+
+    function setupViewportDirectManipulation(domElem) {
+      let pointerDownScreenPos = { x: 0, y: 0 };
+
+      domElem.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return; // Apenas botão esquerdo do mouse
+        pointerDownScreenPos = { x: e.clientX, y: e.clientY };
+        updatePointerNDC(e, domElem);
+        raycaster.setFromCamera(pointerNDC, camera);
+
+        const hits = raycaster.intersectObjects(getInteractiveMeshes(), false);
+        if (hits.length === 0) return;
+
+        const hitMesh = hits[0].object;
+        const dType = hitMesh.userData.dragType;
+
+        // Marca a peça clicada no 3D Orbit e destaca + rola até o card correspondente na Barra Lateral!
+        if (dType === 'name') {
+          selectPart('name', null, true);
+        } else if (dType === 'emblem') {
+          selectPart('emblem', hitMesh.userData.emblemIndex, true);
+        } else if (dType === 'base') {
+          selectPart('base', null, true);
+        }
+
+        // Se clicou na Letra Base sem segurar Shift, ela já ficou marcada na barra e no Orbit,
+        // e deixamos o OrbitControls girar a câmera normalmente.
+        // Se segurar Shift e clicar na Letra Base, gira a Letra Base na mesa!
+        if (dType === 'base' && !e.shiftKey) return;
+
+        const planeHeight = hits[0].point.z;
+        dragPlaneZ.constant = -planeHeight;
+        if (!raycaster.ray.intersectPlane(dragPlaneZ, dragIntersectionPt)) return;
+
+        // Desativa temporariamente o giro da câmera do OrbitControls enquanto arrasta a peça
+        controls.enabled = false;
+
+        if (dType === 'name') {
+          activeDragTarget = {
+            type: 'name',
+            mode: e.shiftKey ? 'rotate' : 'move',
+            mesh: hitMesh,
+            startPlanePt: dragIntersectionPt.clone(),
+            startX: state.namePosX || 0,
+            startY: state.namePosY || 0,
+            startRot: state.nameRotation || 0,
+            meshStartX: hitMesh.position.x,
+            meshStartY: hitMesh.position.y,
+            meshStartRotZ: hitMesh.rotation.z
+          };
+        } else if (dType === 'emblem') {
+          const idx = hitMesh.userData.emblemIndex;
+          const emb = state.emblems[idx];
+          if (!emb) { controls.enabled = true; return; }
+          activeDragTarget = {
+            type: 'emblem',
+            emblemIndex: idx,
+            mode: e.shiftKey ? 'rotate' : 'move',
+            mesh: hitMesh,
+            startPlanePt: dragIntersectionPt.clone(),
+            startX: emb.x,
+            startY: emb.y,
+            startRot: emb.rot,
+            meshStartX: hitMesh.position.x,
+            meshStartY: hitMesh.position.y,
+            meshStartRotZ: hitMesh.rotation.z
+          };
+        } else if (dType === 'base') {
+          activeDragTarget = {
+            type: 'base',
+            mode: 'rotate',
+            mesh: baseGroup,
+            startPlanePt: dragIntersectionPt.clone(),
+            startRot: state.baseRotation || 0
+          };
+        }
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!activeDragTarget) {
+          // Hover feedback sutil de cursor quando passa sobre Nome ou Detalhe
+          if (renderer && renderer.domElement && e.target === renderer.domElement) {
+            updatePointerNDC(e, domElem);
+            raycaster.setFromCamera(pointerNDC, camera);
+            const hits = raycaster.intersectObjects(getInteractiveMeshes(), false);
+            if (hits.length > 0 && (hits[0].object.userData.dragType !== 'base' || e.shiftKey)) {
+              domElem.style.cursor = e.shiftKey ? 'alias' : 'move';
+            } else {
+              domElem.style.cursor = 'grab';
+            }
+          }
+          return;
+        }
+
+        updatePointerNDC(e, domElem);
+        raycaster.setFromCamera(pointerNDC, camera);
+        if (!raycaster.ray.intersectPlane(dragPlaneZ, dragIntersectionPt)) return;
+
+        const dx = dragIntersectionPt.x - activeDragTarget.startPlanePt.x;
+        const dy = dragIntersectionPt.y - activeDragTarget.startPlanePt.y;
+        const halfLimit = Math.round(state.bedSizeMM * 0.44);
+
+        if (activeDragTarget.type === 'name') {
+          if (activeDragTarget.mode === 'rotate' || e.shiftKey) {
+            const newRot = Math.max(-45, Math.min(45, Math.round(activeDragTarget.startRot + dx * 0.6)));
+            state.nameRotation = newRot;
+            syncSidebarControlsFromState();
+            showDragHud(`Inclinação do Nome: ${newRot}°`);
+            rebuild3DModel();
+          } else {
+            const newX = Math.max(-halfLimit, Math.min(halfLimit, Math.round(activeDragTarget.startX + dx)));
+            const newY = Math.max(-halfLimit, Math.min(halfLimit, Math.round(activeDragTarget.startY + dy)));
+            state.namePosX = newX;
+            state.namePosY = newY;
+            // Feedback visual imediato na malha + atualização da cava booleana
+            activeDragTarget.mesh.position.x = activeDragTarget.meshStartX + (newX - activeDragTarget.startX);
+            activeDragTarget.mesh.position.y = activeDragTarget.meshStartY + (newY - activeDragTarget.startY);
+            if (selectionBoxHelper) selectionBoxHelper.update();
+            syncSidebarControlsFromState();
+            showDragHud(`Nome: X=${newX} mm, Y=${newY} mm`);
+            rebuild3DModel();
+          }
+        } else if (activeDragTarget.type === 'emblem') {
+          const emb = state.emblems[activeDragTarget.emblemIndex];
+          if (!emb) return;
+          if (activeDragTarget.mode === 'rotate' || e.shiftKey) {
+            const newRot = Math.max(-90, Math.min(90, Math.round(activeDragTarget.startRot + dx * 0.8)));
+            emb.rot = newRot;
+            const el = document.getElementById(`embRotVal_${activeDragTarget.emblemIndex}`);
+            if (el) el.textContent = `${newRot}°`;
+            showDragHud(`Detalhe #${activeDragTarget.emblemIndex + 1} Rotação: ${newRot}°`);
+            rebuild3DModel();
+          } else {
+            const newX = Math.max(-halfLimit, Math.min(halfLimit, Math.round(activeDragTarget.startX + dx)));
+            const newY = Math.max(-halfLimit, Math.min(halfLimit, Math.round(activeDragTarget.startY + dy)));
+            emb.x = newX;
+            emb.y = newY;
+            activeDragTarget.mesh.position.x = activeDragTarget.meshStartX + (newX - activeDragTarget.startX);
+            activeDragTarget.mesh.position.y = activeDragTarget.meshStartY + (newY - activeDragTarget.startY);
+            if (selectionBoxHelper) selectionBoxHelper.update();
+            const elX = document.getElementById(`embXVal_${activeDragTarget.emblemIndex}`);
+            const elY = document.getElementById(`embYVal_${activeDragTarget.emblemIndex}`);
+            if (elX) elX.textContent = `${newX} mm`;
+            if (elY) elY.textContent = `${newY} mm`;
+            showDragHud(`Detalhe #${activeDragTarget.emblemIndex + 1}: X=${newX} mm, Y=${newY} mm`);
+            rebuild3DModel();
+          }
+        } else if (activeDragTarget.type === 'base') {
+          const newRot = Math.max(-45, Math.min(45, Math.round(activeDragTarget.startRot + dx * 0.5)));
+          state.baseRotation = newRot;
+          syncSidebarControlsFromState();
+          showDragHud(`Rotação da Base: ${newRot}°`);
+          rebuild3DModel();
+        }
+      });
+
+      window.addEventListener('pointerup', (e) => {
+        if (!activeDragTarget) {
+          // Se foi um clique rápido no fundo vazio (sem arrastar a câmera), limpa a seleção
+          if (e.target === domElem && Math.hypot(e.clientX - pointerDownScreenPos.x, e.clientY - pointerDownScreenPos.y) < 4) {
+            updatePointerNDC(e, domElem);
+            raycaster.setFromCamera(pointerNDC, camera);
+            const hits = raycaster.intersectObjects(getInteractiveMeshes(), false);
+            if (hits.length === 0) {
+              clearPartSelection();
+            }
+          }
+          return;
+        }
+        activeDragTarget = null;
+        controls.enabled = true;
+        hideDragHud();
+        renderEmblemsUI();
+        recordStateChange(true);
+        rebuild3DModel();
+      });
+
+      // Alt + Scroll sobre um Detalhe ou sobre a Letra Base altera o Tamanho diretamente no 3D Orbit!
+      domElem.addEventListener('wheel', (e) => {
+        if (!e.altKey) return;
+        updatePointerNDC(e, domElem);
+        raycaster.setFromCamera(pointerNDC, camera);
+        const hits = raycaster.intersectObjects(getInteractiveMeshes(), false);
+        if (hits.length === 0) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        const hitMesh = hits[0].object;
+        const delta = e.deltaY < 0 ? 2 : -2;
+
+        if (hitMesh.userData.dragType === 'emblem') {
+          const idx = hitMesh.userData.emblemIndex;
+          const emb = state.emblems[idx];
+          if (emb) {
+            emb.size = Math.max(15, Math.min(110, emb.size + delta));
+            renderEmblemsUI();
+            showDragHud(`Detalhe #${idx + 1} Tamanho: ${emb.size} mm`);
+            setTimeout(hideDragHud, 900);
+            recordStateChange(false);
+            rebuild3DModel();
+          }
+        } else if (hitMesh.userData.dragType === 'name') {
+          state.nameSize = Math.max(40, Math.min(240, (state.nameSize || 145) + delta * 2));
+          syncSidebarControlsFromState();
+          showDragHud(`Tamanho do Nome: ${state.nameSize} mm`);
+          setTimeout(hideDragHud, 900);
+          recordStateChange(false);
+          rebuild3DModel();
+        } else if (hitMesh.userData.dragType === 'base') {
+          const profile = PRINTER_PROFILES[state.printerProfile] || PRINTER_PROFILES.kobra_x;
+          state.baseSize = Math.max(120, Math.min(profile.maxRecommendedLetter, state.baseSize + delta * 2));
+          syncSidebarControlsFromState();
+          showDragHud(`Tamanho da Letra Base: ${state.baseSize} mm`);
+          setTimeout(hideDragHud, 900);
+          recordStateChange(false);
+          rebuild3DModel();
+        }
+      }, { passive: false });
+
+      // Atalhos de Teclado Globais: Ctrl+Z (Desfazer), Ctrl+Y / Ctrl+Shift+Z (Refazer) e Esc (Limpar seleção)
+      window.addEventListener('keydown', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+        if (e.key === 'Escape') {
+          clearPartSelection();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) redoAction();
+          else undoAction();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          redoAction();
+        }
+      });
+    }
+
+    /* =========================================================
+       INICIALIZAÇÃO DO THREE.JS & VIEWPORT
+       ========================================================= */
+    function initThree() {
+      const container = document.getElementById('threeContainer');
+      if (!container) return;
+
+      const width = container.clientWidth || (window.innerWidth - 380);
+      const height = container.clientHeight || (window.innerHeight - 80);
+
+      // 1. Cena
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+
+      // 2. Câmera
+      camera = new THREE.PerspectiveCamera(45, width / height, 1, 2000);
+      camera.position.set(0, -280, 240);
+
+      // 3. Renderizador WebGL
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // 4. OrbitControls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.target.set(0, 0, 10);
+      controls.maxPolarAngle = Math.PI / 2 - 0.02; // Não deixa a câmera passar por baixo da mesa
+
+      // 5. Grupos de Objetos 3D
+      baseGroup = new THREE.Group();
+      nameGroup = new THREE.Group();
+      emblemGroup = new THREE.Group();
+      plate3Group = new THREE.Group();
+      scene.add(baseGroup);
+      scene.add(nameGroup);
+      scene.add(emblemGroup);
+      scene.add(plate3Group);
+
+      // 6. Iluminação de Estúdio
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 0.85);
+      keyLight.position.set(120, -150, 220);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 2048;
+      keyLight.shadow.mapSize.height = 2048;
+      keyLight.shadow.bias = -0.0005;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.4);
+      fillLight.position.set(-150, 120, 120);
+      scene.add(fillLight);
+
+      // 7. Mesa da Impressora Selecionada (Padrão: Anycubic Kobra X 260 × 260 mm)
+      updatePrinterBed3D();
+
+      // 8. Ativa manipulação direta por mouse no 3D Orbit e histórico de Undo/Redo
+      setupViewportDirectManipulation(renderer.domElement);
+      recordStateChange(true);
+
+      // 9. Event Listeners de Resize
+      window.addEventListener('resize', onWindowResize);
+
+      // Loop de animação
+      animate();
+
+      // Inicializa UI da lista de detalhes e compila modelo inicial
+      renderEmblemsUI();
+      rebuild3DModel();
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('threeContainer');
+      if (!container || !camera || !renderer) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (controls) controls.update();
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    function resetCamera() {
+      if (!camera || !controls) return;
+      camera.position.set(0, -280, 240);
+      controls.target.set(0, 0, 10);
+      controls.update();
+    }
+
+    // Inicialização ao carregar
+    window.addEventListener('DOMContentLoaded', () => {
+      initThree();
+    });
+  </script>
+</body>
+</html>
