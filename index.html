@@ -873,9 +873,9 @@
           <div id="sidebarCardEmblem_${idx}" onclick="selectPart('emblem', ${idx}, false)" class="p-2.5 rounded-xl border ${cardBorderClass} space-y-2.5 transition-all duration-200 cursor-pointer">
             <div class="flex items-center justify-between">
               <span class="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
-                <span class="w-4 h-4 rounded-full ${isSelected ? 'bg-amber-500 text-slate-950' : 'bg-amber-500/20 text-amber-300'} border border-amber-500/40 flex items-center justify-center text-[10px] font-mono">${idx + 1}</span>
+                <span id="numCircleEmblem_${idx}" class="w-4 h-4 rounded-full ${isSelected ? 'bg-amber-500 text-slate-950' : 'bg-amber-500/20 text-amber-300'} border border-amber-500/40 flex items-center justify-center text-[10px] font-mono">${idx + 1}</span>
                 Detalhe #${idx + 1}
-                ${isSelected ? '<span class="text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Ativo</span>' : ''}
+                <span id="badgeSelectedEmblem_${idx}" class="${isSelected ? '' : 'hidden '}text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Ativo</span>
               </span>
               <div class="flex items-center gap-1.5">
                 <button onclick="event.stopPropagation(); resetEmblemItem(${idx})" class="px-1.5 py-0.5 text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition" title="Resetar posição e tamanho">
@@ -889,15 +889,15 @@
 
             <!-- Bloco A: Desenho e Modo de Aplicação -->
             <div class="space-y-1.5">
-              <select onchange="updateEmblemField(${idx}, 'type', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
+              <select onclick="event.stopPropagation()" onfocus="selectPart('emblem', ${idx}, false)" onchange="updateEmblemField(${idx}, 'type', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
                 ${getEmblemOptionsHTML(emb.type)}
               </select>
 
               <div class="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
-                <button type="button" onclick="updateEmblemField(${idx}, 'mode', 'relief')" class="py-1 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition ${isRelief ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}">
+                <button type="button" onclick="event.stopPropagation(); updateEmblemField(${idx}, 'mode', 'relief')" class="py-1 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition ${isRelief ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}">
                   <i class="fa-solid fa-layer-group"></i> Por Cima (Colado)
                 </button>
-                <button type="button" onclick="updateEmblemField(${idx}, 'mode', 'carved')" class="py-1 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition ${!isRelief ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}">
+                <button type="button" onclick="event.stopPropagation(); updateEmblemField(${idx}, 'mode', 'carved')" class="py-1 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition ${!isRelief ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}">
                   <i class="fa-solid fa-puzzle-piece"></i> Cavado (Encaixe)
                 </button>
               </div>
@@ -909,7 +909,7 @@
                 <span class="font-semibold">Tamanho do Detalhe</span>
                 <span id="embSizeVal_${idx}" class="font-mono text-amber-400 font-bold">${emb.size} mm</span>
               </div>
-              <input type="range" min="15" max="110" value="${emb.size}" oninput="updateEmblemField(${idx}, 'size', this.value)" class="w-full accent-amber-500 cursor-pointer">
+              <input type="range" min="15" max="110" value="${emb.size}" onclick="event.stopPropagation()" oninput="updateEmblemField(${idx}, 'size', this.value)" class="w-full accent-amber-500 cursor-pointer">
             </div>
 
             <!-- Bloco C: Transformação Padronizada (Pos X, Pos Y, Rotação) -->
@@ -919,21 +919,21 @@
                   <span>Pos X</span>
                   <span id="embXVal_${idx}" class="font-mono text-amber-400">${emb.x}</span>
                 </div>
-                <input type="range" min="-115" max="115" value="${emb.x}" oninput="updateEmblemField(${idx}, 'x', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                <input type="range" min="-115" max="115" value="${emb.x}" onclick="event.stopPropagation()" oninput="updateEmblemField(${idx}, 'x', this.value)" class="w-full accent-amber-500 cursor-pointer">
               </div>
               <div>
                 <div class="flex justify-between text-[10px] text-slate-400">
                   <span>Pos Y</span>
                   <span id="embYVal_${idx}" class="font-mono text-amber-400">${emb.y}</span>
                 </div>
-                <input type="range" min="-115" max="115" value="${emb.y}" oninput="updateEmblemField(${idx}, 'y', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                <input type="range" min="-115" max="115" value="${emb.y}" onclick="event.stopPropagation()" oninput="updateEmblemField(${idx}, 'y', this.value)" class="w-full accent-amber-500 cursor-pointer">
               </div>
               <div>
                 <div class="flex justify-between text-[10px] text-slate-400">
                   <span>Rotação</span>
                   <span id="embRotVal_${idx}" class="font-mono text-amber-400">${emb.rot}°</span>
                 </div>
-                <input type="range" min="-90" max="90" value="${emb.rot}" oninput="updateEmblemField(${idx}, 'rot', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                <input type="range" min="-90" max="90" value="${emb.rot}" onclick="event.stopPropagation()" oninput="updateEmblemField(${idx}, 'rot', this.value)" class="w-full accent-amber-500 cursor-pointer">
               </div>
             </div>
           </div>
@@ -1112,21 +1112,28 @@
       // Atualiza o destaque dos cards de Detalhes (#1 a #10) sem recriar os inputs enquanto o usuário digita/arrasta
       for (let i = 0; i < state.emblems.length; i++) {
         const embCard = document.getElementById(`sidebarCardEmblem_${i}`);
+        const embBadge = document.getElementById(`badgeSelectedEmblem_${i}`);
+        const numCircle = document.getElementById(`numCircleEmblem_${i}`);
         if (!embCard) continue;
         const isSel = selectedPart.type === 'emblem' && selectedPart.emblemIndex === i;
         if (isSel) {
           embCard.classList.remove('border-slate-800', 'bg-slate-900/95');
           embCard.classList.add(...activeClasses);
+          if (embBadge) embBadge.classList.remove('hidden');
+          if (numCircle) {
+            numCircle.classList.remove('bg-amber-500/20', 'text-amber-300');
+            numCircle.classList.add('bg-amber-500', 'text-slate-950');
+          }
           if (scrollToCard) embCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
           embCard.classList.remove(...activeClasses);
           embCard.classList.add('border-slate-800', 'bg-slate-900/95');
+          if (embBadge) embBadge.classList.add('hidden');
+          if (numCircle) {
+            numCircle.classList.remove('bg-amber-500', 'text-slate-950');
+            numCircle.classList.add('bg-amber-500/20', 'text-amber-300');
+          }
         }
-      }
-      renderEmblemsUI();
-      if (scrollToCard && selectedPart.type === 'emblem' && selectedPart.emblemIndex !== null) {
-        const targetCard = document.getElementById(`sidebarCardEmblem_${selectedPart.emblemIndex}`);
-        if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
 
