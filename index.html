@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parametric 3D Studio - Anycubic Kobra X</title>
+  <title>Parametric 3D Studio — Multi-Printer CAD</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -51,130 +51,139 @@
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased h-screen w-screen flex flex-col overflow-hidden select-none">
 
-  <!-- Header / Top Bar -->
-  <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between flex-wrap gap-2 flex-shrink-0 z-30 shadow-md">
+  <!-- Header / Top Bar Padronizada e Proporcional -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between flex-wrap gap-3 flex-shrink-0 z-30 shadow-md">
+    <!-- Branding Universal -->
     <div class="flex items-center gap-2.5">
-      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-900/30">
-        <i class="fa-solid fa-cube text-sm"></i>
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-900/30">
+        <i class="fa-solid fa-cubes text-base"></i>
       </div>
       <div>
-        <h1 class="font-bold text-sm leading-tight text-white flex items-center gap-2">
-          Parametric 3D Studio <span id="headerPrinterBadge" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Anycubic Kobra X</span>
-        </h1>
-        <p id="headerPrinterSub" class="text-[10px] text-slate-400">Mesa PEI 260 × 260 mm • Bico 0.4 mm</p>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-sm tracking-tight text-white">Parametric 3D Studio</h1>
+          <span id="headerPrinterBadge" class="bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Anycubic Kobra X</span>
+        </div>
+        <p id="headerPrinterSub" class="text-[10px] text-slate-400">Mesa PEI 260 × 260 mm • CAD Multi-Impressora</p>
       </div>
     </div>
 
-    <!-- Quick Actions Bar -->
-    <div class="flex items-center flex-wrap gap-1.5">
-      <!-- Botões Desfazer / Refazer Sempre Visíveis e Destacados -->
-      <div class="bg-slate-950 p-1 rounded-xl border border-amber-500/40 flex items-center gap-1 text-xs shadow-inner">
-        <button id="btnUndo" onclick="undoAction()" disabled class="px-2.5 py-1 rounded-lg font-bold text-amber-300 bg-slate-900 hover:bg-slate-800 disabled:opacity-35 disabled:pointer-events-none transition flex items-center gap-1.5" title="Desfazer alteração (Ctrl+Z)">
-          <i class="fa-solid fa-rotate-left"></i>
+    <!-- Centro: Seletor de Placas / Visualização -->
+    <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center gap-1 text-xs shadow-inner">
+      <button id="btnViewAssemble" onclick="setViewMode('assemble')" class="px-3 py-1.5 rounded-lg font-bold text-white bg-amber-600 transition shadow-sm flex items-center gap-1.5">
+        <i class="fa-solid fa-eye text-[11px]"></i>
+        <span>Montagem 3D</span>
+      </button>
+      <button id="btnViewPlate1" onclick="setViewMode('plate1')" class="px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <i class="fa-solid fa-layer-group text-[11px]"></i>
+        <span>Placa 1 (Base)</span>
+      </button>
+      <button id="btnViewPlate2" onclick="setViewMode('plate2')" class="px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5">
+        <i class="fa-solid fa-signature text-[11px]"></i>
+        <span>Placa 2 (Nome/Apliques)</span>
+      </button>
+      <button id="btnViewPlate3" onclick="setViewMode('plate3')" class="hidden px-3 py-1.5 rounded-lg font-medium text-amber-300 hover:text-white transition flex items-center gap-1.5">
+        <i class="fa-solid fa-puzzle-piece text-[11px]"></i>
+        <span>Placa 3 (Internos)</span>
+      </button>
+      <button id="btnViewPlate4" onclick="setViewMode('plate4')" class="hidden px-3 py-1.5 rounded-lg font-medium text-indigo-300 hover:text-white transition flex items-center gap-1.5">
+        <i class="fa-solid fa-shapes text-[11px]"></i>
+        <span>Placa 4 (Apliques Extra)</span>
+      </button>
+    </div>
+
+    <!-- Direita: Histórico + Exportação -->
+    <div class="flex items-center flex-wrap gap-2">
+      <!-- Grupo Histórico -->
+      <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center gap-1 text-xs">
+        <button id="btnUndo" onclick="undoAction()" disabled class="px-2.5 py-1.5 rounded-lg font-semibold text-slate-200 hover:bg-slate-800 disabled:opacity-35 disabled:pointer-events-none transition flex items-center gap-1.5" title="Desfazer alteração (Ctrl+Z)">
+          <i class="fa-solid fa-rotate-left text-amber-400"></i>
           <span>Desfazer</span>
         </button>
-        <button id="btnRedo" onclick="redoAction()" disabled class="px-2.5 py-1 rounded-lg font-bold text-amber-300 bg-slate-900 hover:bg-slate-800 disabled:opacity-35 disabled:pointer-events-none transition flex items-center gap-1.5" title="Refazer alteração (Ctrl+Y)">
-          <i class="fa-solid fa-rotate-right"></i>
+        <div class="w-px h-4 bg-slate-800"></div>
+        <button id="btnRedo" onclick="redoAction()" disabled class="px-2.5 py-1.5 rounded-lg font-semibold text-slate-200 hover:bg-slate-800 disabled:opacity-35 disabled:pointer-events-none transition flex items-center gap-1.5" title="Refazer alteração (Ctrl+Y)">
+          <i class="fa-solid fa-rotate-right text-amber-400"></i>
           <span>Refazer</span>
         </button>
       </div>
 
-      <!-- Seletor de Modo de Visualização -->
-      <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center text-xs shadow-inner">
-        <button id="btnViewAssemble" onclick="setViewMode('assemble')" class="px-2.5 py-1 rounded-lg font-bold text-white bg-amber-600 transition shadow-sm">
-          Assemble View
+      <!-- Grupo Exportação STL & SCAD -->
+      <div class="flex items-center gap-1.5">
+        <button onclick="exportSTL(1)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Baixar STL da Placa 1 (Letra Base + Internos)">
+          <i class="fa-solid fa-download"></i>
+          <span>STL Placa 1</span>
         </button>
-        <button id="btnViewPlate1" onclick="setViewMode('plate1')" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition">
-          Placa 1 (Base)
+
+        <button onclick="exportSTL(2)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Baixar STL da Placa 2 (Nome + Apliques)">
+          <i class="fa-solid fa-download"></i>
+          <span>STL Placa 2</span>
         </button>
-        <button id="btnViewPlate2" onclick="setViewMode('plate2')" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition">
-          Placa 2 (Nome/Apliques)
+
+        <button id="btnExportSTL3" onclick="exportSTL(3)" class="hidden px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Baixar STL da Placa 3 (Peças Internas Extras)">
+          <i class="fa-solid fa-download"></i>
+          <span>STL Placa 3</span>
         </button>
-        <button id="btnViewPlate3" onclick="setViewMode('plate3')" class="hidden px-2.5 py-1 rounded-lg font-medium text-amber-300 hover:text-white transition">
-          Placa 3 (Internos)
+
+        <button id="btnExportSTL4" onclick="exportSTL(4)" class="hidden px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Baixar STL da Placa 4 (Apliques Extras da Placa 2)">
+          <i class="fa-solid fa-download"></i>
+          <span>STL Placa 4</span>
+        </button>
+
+        <button onclick="exportSCAD()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 border border-teal-500/30 rounded-xl text-xs font-semibold flex items-center gap-1 transition" title="Exportar script paramétrico .scad">
+          <i class="fa-solid fa-code"></i>
+          <span>.SCAD</span>
         </button>
       </div>
-
-      <!-- Exportadores STL -->
-      <button onclick="exportSTL(1)" class="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-900/30 transition">
-        <i class="fa-solid fa-download"></i>
-        <span>STL Base (Chapa 1)</span>
-      </button>
-
-      <button onclick="exportSTL(2)" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-900/30 transition">
-        <i class="fa-solid fa-shapes"></i>
-        <span>STL Nome (Chapa 2)</span>
-      </button>
-
-      <button id="btnExportSTL3" onclick="exportSTL(3)" class="hidden px-2.5 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-amber-900/30 transition">
-        <i class="fa-solid fa-puzzle-piece"></i>
-        <span>STL Internos (Chapa 3)</span>
-      </button>
-
-      <!-- Exportar Script OpenSCAD -->
-      <button onclick="exportSCAD()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 border border-teal-500/30 rounded-xl text-xs font-semibold flex items-center gap-1 transition" title="Exportar script .scad para OpenSCAD / MakerWorld">
-        <i class="fa-solid fa-code"></i>
-        <span>.SCAD</span>
-      </button>
     </div>
   </header>
 
   <!-- Main Workspace -->
   <div class="flex-1 flex overflow-hidden relative">
 
-    <!-- LEFT SIDEBAR: Personalização Completa -->
-    <aside class="w-[360px] lg:w-[380px] bg-slate-900/95 border-r border-slate-800 flex flex-col h-full overflow-y-auto custom-scrollbar p-3.5 space-y-3.5 flex-shrink-0 z-20">
+    <!-- LEFT SIDEBAR: Personalização Padronizada -->
+    <aside class="w-[370px] lg:w-[390px] bg-slate-900/95 border-r border-slate-800 flex flex-col h-full overflow-y-auto custom-scrollbar p-3.5 space-y-3.5 flex-shrink-0 z-20">
 
-      <!-- Seletor de Perfil de Impressora -->
-      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2 shadow-inner">
+      <!-- 1. Perfil de Impressora & Filamentos -->
+      <section class="bg-slate-950/90 p-3 rounded-xl border border-slate-800 space-y-3 shadow-inner">
         <div class="flex justify-between items-center">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Perfil de Impressora</span>
-          </div>
-          <div id="sidebarBedDimBadge" class="text-[11px] font-mono bg-slate-800/80 px-2 py-0.5 rounded text-amber-400 border border-slate-700">
+          <span class="text-[11px] text-slate-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-print text-amber-500"></i> Impressora & Cores
+          </span>
+          <span id="sidebarBedDimBadge" class="text-[10px] font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-400 border border-slate-700">
             260×260 mm
-          </div>
+          </span>
         </div>
-        <select id="printerProfileSelect" onchange="updatePrinterProfile(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
+
+        <select id="printerProfileSelect" onchange="updatePrinterProfile(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer">
           <option value="kobra_x" selected>Anycubic Kobra X / S (260 × 260 mm)</option>
           <option value="bambu_a1">Bambu Lab A1 / P1S / X1C (256 × 256 mm)</option>
           <option value="ender_v3_ke">Creality Ender-3 V3 KE (220 × 220 mm)</option>
         </select>
-      </div>
 
-      <!-- Paletas de Cores -->
-      <section class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-            <i class="fa-solid fa-palette text-amber-500"></i> Paletas de Filamento
-          </span>
-        </div>
-        
-        <div class="grid grid-cols-4 gap-1.5">
+        <!-- Presets Rápidos de Cores -->
+        <div class="grid grid-cols-4 gap-1.5 pt-1">
           <button onclick="applyPalette('#5c3826', '#dfc4a2')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
-            <div class="flex w-full h-3 rounded overflow-hidden">
+            <div class="flex w-full h-2.5 rounded overflow-hidden">
               <span class="w-1/2 h-full bg-[#5c3826]"></span>
               <span class="w-1/2 h-full bg-[#dfc4a2]"></span>
             </div>
             <span class="text-[9px] text-slate-400 font-medium">Terroso</span>
           </button>
           <button onclick="applyPalette('#9a6237', '#f4ebe1')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
-            <div class="flex w-full h-3 rounded overflow-hidden">
+            <div class="flex w-full h-2.5 rounded overflow-hidden">
               <span class="w-1/2 h-full bg-[#9a6237]"></span>
               <span class="w-1/2 h-full bg-[#f4ebe1]"></span>
             </div>
             <span class="text-[9px] text-slate-400 font-medium">Caramelo</span>
           </button>
           <button onclick="applyPalette('#f472b6', '#ffffff')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
-            <div class="flex w-full h-3 rounded overflow-hidden">
+            <div class="flex w-full h-2.5 rounded overflow-hidden">
               <span class="w-1/2 h-full bg-[#f472b6]"></span>
               <span class="w-1/2 h-full bg-[#ffffff]"></span>
             </div>
             <span class="text-[9px] text-slate-400 font-medium">Rosa Bebê</span>
           </button>
           <button onclick="applyPalette('#4d7c0f', '#ecfccb')" class="p-1 rounded-lg border border-slate-800 bg-slate-900 hover:border-amber-500 flex flex-col items-center gap-1 transition">
-            <div class="flex w-full h-3 rounded overflow-hidden">
+            <div class="flex w-full h-2.5 rounded overflow-hidden">
               <span class="w-1/2 h-full bg-[#4d7c0f]"></span>
               <span class="w-1/2 h-full bg-[#ecfccb]"></span>
             </div>
@@ -182,16 +191,16 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 pt-1 text-xs">
+        <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-[10px] text-slate-400 block mb-1">Filamento 1 (Base)</span>
+            <span class="text-[10px] text-slate-400 block mb-1">Cor 1 (Base & Internos)</span>
             <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
               <input type="color" id="baseColorInput" value="#5c3826" oninput="updateColor('base', this.value)" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0">
               <span id="baseColorHex" class="font-mono text-slate-300 text-[11px]">#5c3826</span>
             </div>
           </div>
           <div>
-            <span class="text-[10px] text-slate-400 block mb-1">Filamento 2 (Nome)</span>
+            <span class="text-[10px] text-slate-400 block mb-1">Cor 2 (Nome & Apliques)</span>
             <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
               <input type="color" id="overlayColorInput" value="#dfc4a2" oninput="updateColor('overlay', this.value)" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0">
               <span id="overlayColorHex" class="font-mono text-slate-300 text-[11px]">#dfc4a2</span>
@@ -200,87 +209,93 @@
         </div>
       </section>
 
-      <!-- CARD: LETRA BASE (CHAPA 1) -->
-      <section id="sidebarCardBase" onclick="selectPart('base', null, false)" class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5 transition-all duration-200 cursor-pointer">
+      <!-- 2. CARD PADRONIZADO: LETRA BASE (CHAPA 1) -->
+      <section id="sidebarCardBase" onclick="selectPart('base', null, false)" class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-3 transition-all duration-200 cursor-pointer">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-font"></i> Letra Base
-            <span id="badgeSelectedBase" class="hidden text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Selecionado</span>
+            <i class="fa-solid fa-font"></i> 1. Letra Base
+            <span id="badgeSelectedBase" class="hidden text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Ativo</span>
           </span>
-          <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Chapa 1</span>
+          <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Placa 1</span>
         </div>
 
+        <!-- Bloco A: Conteúdo e Tipografia -->
         <div class="grid grid-cols-3 gap-2">
           <div class="col-span-1">
-            <span class="text-[10px] text-slate-400 block mb-1">Letra</span>
-            <input type="text" id="baseLetterInput" maxlength="1" value="" placeholder="Ex: R" oninput="updateParam('baseLetter', this.value)" class="w-full text-center text-lg font-bold bg-slate-900 border border-slate-700 rounded-lg py-1 text-white placeholder-slate-600 uppercase focus:ring-2 focus:ring-amber-500 outline-none">
+            <span class="text-[10px] text-slate-400 block mb-1">Caractere</span>
+            <input type="text" id="baseLetterInput" maxlength="1" value="" placeholder="Ex: R" oninput="updateParam('baseLetter', this.value)" class="w-full text-center text-base font-extrabold bg-slate-900 border border-slate-700 rounded-lg py-1 text-white placeholder-slate-600 uppercase focus:ring-2 focus:ring-amber-500 outline-none">
           </div>
           <div class="col-span-2">
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Altura Z (Espessura)</span>
-              <span id="baseZVal" class="font-mono text-amber-400">20 mm</span>
-            </div>
-            <input type="range" id="baseZRange" min="10" max="40" value="20" oninput="updateParam('depthZThicknessMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+            <span class="text-[10px] text-slate-400 block mb-1">Fonte da Base (15 Opções)</span>
+            <select id="baseFontSelect" onchange="updateParam('baseFont', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value="Montserrat" selected>Montserrat Black (Geométrica)</option>
+              <option value="Fredoka">Fredoka Bold (Arredondada Kids)</option>
+              <option value="Bebas">Bebas Neue (Alta Condensada)</option>
+              <option value="Playfair">Playfair Display (Clássica)</option>
+              <option value="Cinzel">Cinzel Black (Imperial)</option>
+              <option value="Abril">Abril Fatface (Elegante)</option>
+              <option value="Poppins">Poppins Black (Moderna)</option>
+              <option value="RobotoSlab">Roboto Slab (Mecânica)</option>
+              <option value="Righteous">Righteous (Gamer)</option>
+              <option value="Oswald">Oswald Bold (Vertical)</option>
+              <option value="AlfaSlab">Alfa Slab One (Super Bold)</option>
+              <option value="Lobster">Lobster (Retrô)</option>
+              <option value="Anton">Anton (Pôster Forte)</option>
+              <option value="Merriweather">Merriweather (Tradicional)</option>
+              <option value="Bangers">Bangers (Quadrinhos)</option>
+            </select>
           </div>
         </div>
 
-        <div>
-          <span class="text-[10px] text-slate-400 block mb-1">Fonte da Letra Base (15 Opções)</span>
-          <select id="baseFontSelect" onchange="updateParam('baseFont', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
-            <option value="Montserrat" selected>Montserrat Black (Robusta Geométrica)</option>
-            <option value="Fredoka">Fredoka Bold (Arredondada Fofa Kids)</option>
-            <option value="Bebas">Bebas Neue (Alta e Condensada)</option>
-            <option value="Playfair">Playfair Display Black (Clássica Serifada)</option>
-            <option value="Cinzel">Cinzel Black (Imperial / Realeza)</option>
-            <option value="Abril">Abril Fatface (Elegante Luxo)</option>
-            <option value="Poppins">Poppins Black (Moderna Forte)</option>
-            <option value="RobotoSlab">Roboto Slab Black (Bloco Mecânico)</option>
-            <option value="Righteous">Righteous (Futurista / Gamer)</option>
-            <option value="Oswald">Oswald Bold (Impacto Vertical)</option>
-            <option value="AlfaSlab">Alfa Slab One (Super Pesada)</option>
-            <option value="Lobster">Lobster (Retrô Bold)</option>
-            <option value="Anton">Anton (Pôster Ultra Forte)</option>
-            <option value="Merriweather">Merriweather Black (Tradicional)</option>
-            <option value="Bangers">Bangers (Quadrinhos / Geek)</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
+        <!-- Bloco B: Dimensões Padronizadas (Tamanho, Altura Z, Peso) -->
+        <div class="bg-slate-900/70 p-2.5 rounded-lg border border-slate-800/80 space-y-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Dimensões & Volume</span>
           <div>
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Tamanho na Mesa</span>
-              <span id="baseSizeVal" class="font-mono text-amber-400">190 mm</span>
+            <div class="flex justify-between text-[11px] text-slate-300 mb-0.5">
+              <span>Tamanho (Altura da Letra)</span>
+              <span id="baseSizeVal" class="font-mono text-amber-400 font-bold">190 mm</span>
             </div>
             <input type="range" id="baseSizeRange" min="100" max="240" value="190" oninput="updateParam('baseSize', this.value)" class="w-full accent-amber-500 cursor-pointer">
           </div>
-          <div>
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Peso do Traço</span>
-              <span id="baseWeightVal" class="font-mono text-amber-400">100%</span>
+          <div class="grid grid-cols-2 gap-2.5 pt-1">
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>Altura Z (Espessura)</span>
+                <span id="baseZVal" class="font-mono text-amber-400">20 mm</span>
+              </div>
+              <input type="range" id="baseZRange" min="10" max="40" value="20" oninput="updateParam('depthZThicknessMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
             </div>
-            <input type="range" id="baseWeightRange" min="70" max="140" value="100" oninput="updateParam('baseWeight', this.value)" class="w-full accent-amber-500 cursor-pointer">
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>Peso do Traço</span>
+                <span id="baseWeightVal" class="font-mono text-amber-400">100%</span>
+              </div>
+              <input type="range" id="baseWeightRange" min="70" max="140" value="100" oninput="updateParam('baseWeight', this.value)" class="w-full accent-amber-500 cursor-pointer">
+            </div>
           </div>
         </div>
 
-        <div>
-          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-            <span>Rotação na Mesa</span>
+        <!-- Bloco C: Transformação Padronizada -->
+        <div class="bg-slate-900/70 p-2.5 rounded-lg border border-slate-800/80">
+          <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+            <span class="font-bold uppercase tracking-wider">Rotação na Mesa (°)</span>
             <span id="baseRotVal" class="font-mono text-amber-400">0°</span>
           </div>
           <input type="range" id="baseRotRange" min="-45" max="45" value="0" oninput="updateParam('baseRotation', this.value)" class="w-full accent-amber-500 cursor-pointer">
         </div>
       </section>
 
-      <!-- CARD: NOME CURSIVO (CHAPA 2) -->
-      <section id="sidebarCardName" onclick="selectPart('name', null, false)" class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5 transition-all duration-200 cursor-pointer">
+      <!-- 3. CARD PADRONIZADO: NOME CURSIVO (CHAPA 2) -->
+      <section id="sidebarCardName" onclick="selectPart('name', null, false)" class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-3 transition-all duration-200 cursor-pointer">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-signature"></i> Nome Cursivo
-            <span id="badgeSelectedName" class="hidden text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Selecionado</span>
+            <i class="fa-solid fa-signature"></i> 2. Nome Cursivo
+            <span id="badgeSelectedName" class="hidden text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Ativo</span>
           </span>
-          <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Chapa 2</span>
+          <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Placa 2</span>
         </div>
 
+        <!-- Bloco A: Conteúdo e Tipografia -->
         <div class="grid grid-cols-2 gap-2">
           <div>
             <span class="text-[10px] text-slate-400 block mb-1">Texto do Nome</span>
@@ -289,111 +304,93 @@
           <div>
             <span class="text-[10px] text-slate-400 block mb-1">Fonte Cursiva (15 Opções)</span>
             <select id="nameFontSelect" onchange="updateParam('nameFont', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
-              <option value="Pacifico" selected>Pacifico (Suave Conectada)</option>
-              <option value="Dancing">Dancing Script (Caligrafia Viva)</option>
-              <option value="GreatVibes">Great Vibes (Elegante Clássica)</option>
+              <option value="Pacifico" selected>Pacifico (Conectada)</option>
+              <option value="Dancing">Dancing Script (Viva)</option>
+              <option value="GreatVibes">Great Vibes (Clássica)</option>
               <option value="Satisfy">Satisfy (Brush Fluida)</option>
-              <option value="Sacramento">Sacramento (Monoline Fina)</option>
+              <option value="Sacramento">Sacramento (Monoline)</option>
               <option value="AlexBrush">Alex Brush (Pincel Real)</option>
-              <option value="Parisienne">Parisienne (Francesa Romântica)</option>
-              <option value="Caveat">Caveat Bold (Manuscrita Jovem)</option>
+              <option value="Parisienne">Parisienne (Romântica)</option>
+              <option value="Caveat">Caveat Bold (Jovem)</option>
               <option value="Cookie">Cookie (Retrô Doce)</option>
               <option value="Allura">Allura (Convite Luxo)</option>
-              <option value="Yellowtail">Yellowtail (Vintage Script)</option>
-              <option value="MarckScript">Marck Script (Caneta Tinteiro)</option>
-              <option value="Tangerine">Tangerine Bold (Fina Imperial)</option>
+              <option value="Yellowtail">Yellowtail (Vintage)</option>
+              <option value="MarckScript">Marck Script (Tinteiro)</option>
+              <option value="Tangerine">Tangerine Bold (Imperial)</option>
               <option value="Kaushan">Kaushan Script (Dinâmica)</option>
-              <option value="BadScript">Bad Script (Casual Leve)</option>
+              <option value="BadScript">Bad Script (Casual)</option>
             </select>
           </div>
         </div>
 
-        <div>
-          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-            <span>Tamanho da Fonte do Nome (Largura)</span>
-            <span id="nameSizeVal" class="font-mono text-amber-400">145 mm</span>
+        <!-- Bloco B: Dimensões Padronizadas (Tamanho, Altura Z, Peso) -->
+        <div class="bg-slate-900/70 p-2.5 rounded-lg border border-slate-800/80 space-y-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Dimensões & Volume</span>
+          <div>
+            <div class="flex justify-between text-[11px] text-slate-300 mb-0.5">
+              <span>Tamanho (Largura do Nome)</span>
+              <span id="nameSizeVal" class="font-mono text-amber-400 font-bold">145 mm</span>
+            </div>
+            <input type="range" id="nameSizeRange" min="40" max="240" value="145" oninput="updateParam('nameSize', this.value)" class="w-full accent-amber-500 cursor-pointer">
           </div>
-          <input type="range" id="nameSizeRange" min="40" max="240" value="145" oninput="updateParam('nameSize', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          <div class="grid grid-cols-2 gap-2.5 pt-1">
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>Altura Z (Relevo)</span>
+                <span id="nameZVal" class="font-mono text-amber-400">4.0 mm</span>
+              </div>
+              <input type="range" id="nameZRange" min="2.0" max="10.0" step="0.5" value="4.0" oninput="updateParam('nameZThicknessMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>Peso do Traço</span>
+                <span id="nameWeightVal" class="font-mono text-amber-400">100%</span>
+              </div>
+              <input type="range" id="nameWeightRange" min="65" max="150" value="100" oninput="updateParam('nameWeight', this.value)" class="w-full accent-amber-500 cursor-pointer">
+            </div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Altura Relevo Z</span>
-              <span id="nameZVal" class="font-mono text-amber-400">4.0 mm</span>
+        <!-- Bloco C: Transformação Padronizada (Posição X, Y e Rotação) -->
+        <div class="bg-slate-900/70 p-2.5 rounded-lg border border-slate-800/80 space-y-1.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Posição & Rotação</span>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>Pos X</span>
+                <span id="namePosXVal" class="font-mono text-amber-400">0 mm</span>
+              </div>
+              <input type="range" id="namePosXRange" min="-95" max="95" value="0" oninput="updateParam('namePosX', this.value)" class="w-full accent-amber-500 cursor-pointer">
             </div>
-            <input type="range" id="nameZRange" min="2.0" max="10.0" step="0.5" value="4.0" oninput="updateParam('nameZThicknessMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
-          </div>
-          <div>
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Espessura Traço</span>
-              <span id="nameWeightVal" class="font-mono text-amber-400">100%</span>
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>Pos Y</span>
+                <span id="namePosYVal" class="font-mono text-amber-400">-10 mm</span>
+              </div>
+              <input type="range" id="namePosYRange" min="-95" max="95" value="-10" oninput="updateParam('namePosY', this.value)" class="w-full accent-amber-500 cursor-pointer">
             </div>
-            <input type="range" id="nameWeightRange" min="65" max="150" value="100" oninput="updateParam('nameWeight', this.value)" class="w-full accent-amber-500 cursor-pointer">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2">
-          <div>
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Posição X</span>
-              <span id="namePosXVal" class="font-mono text-amber-400">0 mm</span>
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                <span>Rotação</span>
+                <span id="nameRotVal" class="font-mono text-amber-400">0°</span>
+              </div>
+              <input type="range" id="nameRotRange" min="-45" max="45" value="0" oninput="updateParam('nameRotation', this.value)" class="w-full accent-amber-500 cursor-pointer">
             </div>
-            <input type="range" id="namePosXRange" min="-80" max="80" value="0" oninput="updateParam('namePosX', this.value)" class="w-full accent-amber-500 cursor-pointer">
-          </div>
-          <div>
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Posição Y</span>
-              <span id="namePosYVal" class="font-mono text-amber-400">-10 mm</span>
-            </div>
-            <input type="range" id="namePosYRange" min="-80" max="80" value="-10" oninput="updateParam('namePosY', this.value)" class="w-full accent-amber-500 cursor-pointer">
-          </div>
-          <div>
-            <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Inclinação</span>
-              <span id="nameRotVal" class="font-mono text-amber-400">0°</span>
-            </div>
-            <input type="range" id="nameRotRange" min="-45" max="45" value="0" oninput="updateParam('nameRotation', this.value)" class="w-full accent-amber-500 cursor-pointer">
           </div>
         </div>
       </section>
 
-      <!-- CARD: CAVA DE ENCAIXE & TOLERÂNCIA -->
-      <section class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-puzzle-piece"></i> Cava de Encaixe & Tolerância
-          </span>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-            <span>Profundidade da Cava</span>
-            <span id="recessDepthVal" class="font-mono text-amber-400">2.5 mm</span>
-          </div>
-          <input type="range" id="recessDepthRange" min="1.0" max="5.0" step="0.5" value="2.5" oninput="updateParam('recessDepthMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
-        </div>
-
-        <div>
-          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
-            <span>Folga X-Y (Tolerância)</span>
-            <span id="xyCompVal" class="font-mono text-amber-400">0.26 mm</span>
-          </div>
-          <input type="range" id="xyCompRange" min="0.10" max="0.50" step="0.02" value="0.26" oninput="updateParam('xyCompensationMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
-        </div>
-      </section>
-
-      <!-- CARD: APLIQUES E DETALHES DINÂMICOS (ATÉ 10 ITENS) -->
+      <!-- 4. CARD: DETALHES E APLIQUES DINÂMICOS (ATÉ 10 ITENS) -->
       <section class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-shapes"></i> Detalhes & Apliques
+            <i class="fa-solid fa-shapes"></i> 3. Detalhes & Apliques
           </span>
           <span id="emblemCountBadge" class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-700/40 px-2 py-0.5 rounded">0 / 10</span>
         </div>
 
         <p class="text-[11px] text-slate-400 leading-relaxed">
-          Adicione até 10 detalhes infantis ou adultos e escolha se cada um ficará <b>Por Cima (Colado)</b> sobre a superfície lisa ou <b>Cavado (Encaixe)</b> com cava na Base + peça na Placa 2.
+          Adicione ícones infantis ou adultos. Escolha entre <b>Por Cima (Colado)</b> ou <b>Cavado (Encaixe)</b>. As peças internas são agrupadas automaticamente sem sobreposição (espaço mín. $\ge 0.75\text{ mm}$).
         </p>
 
         <!-- Lista Dinâmica de Detalhes -->
@@ -406,32 +403,75 @@
         </button>
       </section>
 
+      <!-- 5. CARD: AJUSTE FINO DE ENCAIXE E ESPAÇAMENTO -->
+      <section class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-sliders text-amber-500"></i> Engenharia de Encaixe
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+              <span>Profundidade Cava</span>
+              <span id="recessDepthVal" class="font-mono text-amber-400">2.5 mm</span>
+            </div>
+            <input type="range" id="recessDepthRange" min="1.0" max="5.0" step="0.5" value="2.5" oninput="updateParam('recessDepthMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+              <span>Folga X-Y (Cava)</span>
+              <span id="xyCompVal" class="font-mono text-amber-400">0.26 mm</span>
+            </div>
+            <input type="range" id="xyCompRange" min="0.10" max="0.50" step="0.02" value="0.26" oninput="updateParam('xyCompensationMM', this.value)" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+            <span>Espaço Mínimo entre Peças Internas</span>
+            <span id="inlayGapVal" class="font-mono text-emerald-400">1.20 mm (Mín 0.75 mm)</span>
+          </div>
+          <input type="range" id="inlayGapRange" min="0.75" max="4.00" step="0.05" value="1.20" oninput="updateParam('inlayMinGapMM', this.value)" class="w-full accent-emerald-500 cursor-pointer">
+        </div>
+      </section>
+
     </aside>
 
     <!-- RIGHT: 3D WebGL Three.js Viewport -->
     <main class="flex-1 flex flex-col h-full bg-slate-950 relative overflow-hidden select-none">
       
-      <!-- Top HUD de status da Câmera + Botões Desfazer/Refazer Diretos no 3D Orbit -->
-      <div class="px-4 py-2 flex items-center justify-between bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-xs z-10 flex-shrink-0 gap-2 flex-wrap">
-        <div class="flex items-center gap-2.5 flex-wrap">
+      <!-- Top HUD do 3D Orbit com Seletor de Modo do Mouse (Orbitar, Mover, Rotacionar, Escalar) -->
+      <div class="px-4 py-2 flex items-center justify-between bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-xs z-10 flex-shrink-0 gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap">
           <span class="font-semibold text-slate-300 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="hudBedTitle">Anycubic Kobra X PEI Bed (260 × 260 mm)</span>
-          </span>
-          <span class="text-slate-600">|</span>
-          <span class="text-slate-400 text-[11px]">
-            <i class="fa-solid fa-hand-pointer text-amber-400"></i> <b>Arraste Nome/Detalhe:</b> Mover X/Y • <b>Shift+Arraste:</b> Girar • <b>Alt+Scroll:</b> Escalar
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="hudBedTitle">Anycubic Kobra X PEI Bed (260 × 260 mm)</span>
           </span>
         </div>
 
+        <!-- Barra de Ferramentas Interativas do Mouse no 3D Orbit -->
+        <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
+          <span class="text-[10px] text-slate-400 font-bold uppercase px-2 hidden sm:inline">Modo Mouse:</span>
+          <button id="btnToolMove" onclick="setOrbitToolMode('move')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-600 text-white transition flex items-center gap-1" title="Arrastar peça para Mover X/Y">
+            <i class="fa-solid fa-arrows-up-down-left-right"></i> Mover
+          </button>
+          <button id="btnToolRotate" onclick="setOrbitToolMode('rotate')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center gap-1" title="Arrastar peça para Rotacionar (°)">
+            <i class="fa-solid fa-rotate"></i> Girar
+          </button>
+          <button id="btnToolScale" onclick="setOrbitToolMode('scale')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center gap-1" title="Arrastar peça para Aumentar/Diminuir Tamanho (mm)">
+            <i class="fa-solid fa-expand"></i> Tamanho
+          </button>
+          <button id="btnToolCamera" onclick="setOrbitToolMode('camera')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center gap-1" title="Apenas girar a câmera 3D">
+            <i class="fa-solid fa-video"></i> Câmera
+          </button>
+        </div>
+
         <div class="flex items-center gap-1.5">
-          <button id="btnUndoViewport" onclick="undoAction()" disabled class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:pointer-events-none text-amber-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="Desfazer (Ctrl+Z)">
-            <i class="fa-solid fa-rotate-left"></i> Desfazer
-          </button>
-          <button id="btnRedoViewport" onclick="redoAction()" disabled class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-35 disabled:pointer-events-none text-amber-300 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="Refazer (Ctrl+Y)">
-            <i class="fa-solid fa-rotate-right"></i> Refazer
-          </button>
-          <button onclick="resetCamera()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition flex items-center gap-1 border border-slate-700">
-            <i class="fa-solid fa-arrows-rotate text-xs"></i> Resetar Câmera
+          <button onclick="resetCamera()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition flex items-center gap-1 border border-slate-700" title="Centralizar câmera 3D">
+            <i class="fa-solid fa-camera-rotate text-xs text-amber-400"></i> Resetar Vista
           </button>
         </div>
       </div>
@@ -444,13 +484,55 @@
           <span>Calculando geometria 3D...</span>
         </div>
 
-        <!-- Badge de Peça Selecionada no Orbit -->
-        <div id="selectedPartHud" class="hidden absolute top-3 right-3 bg-slate-900/95 border border-amber-500/60 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg z-20">
-          <i class="fa-solid fa-crosshairs text-amber-400 animate-pulse"></i>
-          <span id="selectedPartHudText">Selecionado: Nome Cursivo</span>
-          <button onclick="clearPartSelection()" class="ml-1 text-slate-400 hover:text-white transition" title="Desmarcar seleção (Esc)">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+        <!-- Painel Flutuante de Manipulação Direta da Peça Selecionada no 3D Orbit -->
+        <div id="selectedPartHud" class="hidden absolute top-3 right-3 bg-slate-900/95 backdrop-blur-md border border-amber-500/60 text-slate-100 p-2.5 rounded-2xl text-xs shadow-2xl z-20 flex flex-col gap-2 min-w-[250px]">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <div class="flex items-center gap-1.5 font-bold text-amber-400">
+              <i class="fa-solid fa-crosshairs animate-pulse"></i>
+              <span id="selectedPartHudText">Selecionado</span>
+            </div>
+            <button onclick="clearPartSelection()" class="w-5 h-5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition" title="Desmarcar seleção (Esc)">
+              <i class="fa-solid fa-xmark text-[11px]"></i>
+            </button>
+          </div>
+
+          <!-- Botões Rápidos de Tamanho e Rotação Direto no Orbit -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-950 p-1.5 rounded-xl border border-slate-800 flex flex-col items-center gap-1">
+              <span class="text-[9px] text-slate-400 uppercase font-bold">Tamanho (Escala)</span>
+              <div class="flex items-center gap-1 w-full justify-between">
+                <button onclick="nudgeSelectedPart('scale', -5)" class="w-7 h-6 rounded-lg bg-slate-800 hover:bg-amber-600 text-white font-bold transition flex items-center justify-center" title="Diminuir tamanho">
+                  <i class="fa-solid fa-minus text-[10px]"></i>
+                </button>
+                <span id="hudQuickSizeVal" class="font-mono text-[11px] font-bold text-amber-300">--</span>
+                <button onclick="nudgeSelectedPart('scale', 5)" class="w-7 h-6 rounded-lg bg-slate-800 hover:bg-amber-600 text-white font-bold transition flex items-center justify-center" title="Aumentar tamanho">
+                  <i class="fa-solid fa-plus text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="bg-slate-950 p-1.5 rounded-xl border border-slate-800 flex flex-col items-center gap-1">
+              <span class="text-[9px] text-slate-400 uppercase font-bold">Rotação (°)</span>
+              <div class="flex items-center gap-1 w-full justify-between">
+                <button onclick="nudgeSelectedPart('rotate', -5)" class="w-7 h-6 rounded-lg bg-slate-800 hover:bg-amber-600 text-white font-bold transition flex items-center justify-center" title="Girar anti-horário">
+                  <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                </button>
+                <span id="hudQuickRotVal" class="font-mono text-[11px] font-bold text-amber-300">0°</span>
+                <button onclick="nudgeSelectedPart('rotate', 5)" class="w-7 h-6 rounded-lg bg-slate-800 hover:bg-amber-600 text-white font-bold transition flex items-center justify-center" title="Girar horário">
+                  <i class="fa-solid fa-rotate-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-1.5 pt-0.5">
+            <button onclick="nudgeSelectedPart('center', 0)" class="flex-1 py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-arrows-to-dot text-amber-400"></i> Centralizar
+            </button>
+            <button onclick="nudgeSelectedPart('resetRot', 0)" class="flex-1 py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-compass text-amber-400"></i> Zerar Giro
+            </button>
+          </div>
         </div>
 
         <!-- Tooltip flutuante ao arrastar peças no 3D Orbit -->
@@ -541,6 +623,7 @@
       overlayColor: '#dfc4a2',
 
       xyCompensationMM: 0.26,
+      inlayMinGapMM: 1.20, // Espaçamento mínimo garantido >= 0.75 mm entre peças internas dos detalhes
 
       // Lista dinâmica de até 10 detalhes/apliques
       // Cada item: { id, type, mode: 'relief' | 'carved', x, y, size, rot }
@@ -550,6 +633,9 @@
     };
 
     const MAX_EMBLEMS = 10;
+
+    // Modo de ferramenta interativa do mouse no 3D Orbit: 'move' | 'rotate' | 'scale' | 'camera'
+    let orbitToolMode = 'move';
 
     // Estado da Peça Selecionada no 3D Orbit e na Barra Lateral
     // { type: 'base' | 'name' | 'emblem' | null, emblemIndex: number | null }
@@ -587,6 +673,7 @@
         recessDepthMM: state.recessDepthMM,
         overlayColor: state.overlayColor,
         xyCompensationMM: state.xyCompensationMM,
+        inlayMinGapMM: state.inlayMinGapMM,
         emblems: state.emblems
       }));
     }
@@ -663,8 +750,11 @@
       setTxt('recessDepthVal', `${state.recessDepthMM.toFixed(1)} mm`);
       setVal('xyCompRange', state.xyCompensationMM);
       setTxt('xyCompVal', `${state.xyCompensationMM.toFixed(2)} mm`);
+      setVal('inlayGapRange', state.inlayMinGapMM);
+      setTxt('inlayGapVal', `${state.inlayMinGapMM.toFixed(2)} mm (Mín 0.75 mm)`);
 
       renderEmblemsUI();
+      refreshSelectedPartQuickHud();
     }
 
     function applySnapshot(snap) {
@@ -785,10 +875,10 @@
               <span class="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
                 <span class="w-4 h-4 rounded-full ${isSelected ? 'bg-amber-500 text-slate-950' : 'bg-amber-500/20 text-amber-300'} border border-amber-500/40 flex items-center justify-center text-[10px] font-mono">${idx + 1}</span>
                 Detalhe #${idx + 1}
-                ${isSelected ? '<span class="text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Selecionado</span>' : ''}
+                ${isSelected ? '<span class="text-[9px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded uppercase">Ativo</span>' : ''}
               </span>
               <div class="flex items-center gap-1.5">
-                <button onclick="event.stopPropagation(); resetEmblemItem(${idx})" class="px-1.5 py-0.5 text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition" title="Resetar posição">
+                <button onclick="event.stopPropagation(); resetEmblemItem(${idx})" class="px-1.5 py-0.5 text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition" title="Resetar posição e tamanho">
                   <i class="fa-solid fa-rotate-left"></i>
                 </button>
                 <button onclick="event.stopPropagation(); removeEmblemSlot(${idx})" class="px-1.5 py-0.5 text-[10px] bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/40 rounded transition" title="Remover este detalhe">
@@ -797,16 +887,12 @@
               </div>
             </div>
 
-            <!-- Seletor do Desenho -->
-            <div>
+            <!-- Bloco A: Desenho e Modo de Aplicação -->
+            <div class="space-y-1.5">
               <select onchange="updateEmblemField(${idx}, 'type', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:ring-2 focus:ring-amber-500 outline-none">
                 ${getEmblemOptionsHTML(emb.type)}
               </select>
-            </div>
 
-            <!-- Modo: Alto Relevo (Por Cima) vs Cavado com Peça de Encaixe -->
-            <div>
-              <span class="text-[10px] text-slate-400 block mb-1">Tipo de Aplicação na Peça</span>
               <div class="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
                 <button type="button" onclick="updateEmblemField(${idx}, 'mode', 'relief')" class="py-1 px-2 rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition ${isRelief ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}">
                   <i class="fa-solid fa-layer-group"></i> Por Cima (Colado)
@@ -817,39 +903,37 @@
               </div>
             </div>
 
-            <!-- Sliders de Posição, Tamanho e Rotação -->
-            <div class="space-y-2 pt-1 border-t border-slate-800/80">
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <div class="flex justify-between text-[10px] text-slate-400">
-                    <span>Posição X</span>
-                    <span id="embXVal_${idx}" class="font-mono text-amber-400">${emb.x} mm</span>
-                  </div>
-                  <input type="range" min="-115" max="115" value="${emb.x}" oninput="updateEmblemField(${idx}, 'x', this.value)" class="w-full accent-amber-500 cursor-pointer">
-                </div>
-                <div>
-                  <div class="flex justify-between text-[10px] text-slate-400">
-                    <span>Posição Y</span>
-                    <span id="embYVal_${idx}" class="font-mono text-amber-400">${emb.y} mm</span>
-                  </div>
-                  <input type="range" min="-115" max="115" value="${emb.y}" oninput="updateEmblemField(${idx}, 'y', this.value)" class="w-full accent-amber-500 cursor-pointer">
-                </div>
+            <!-- Bloco B: Dimensões Padronizadas (Tamanho em destaque no topo, igual Letra e Nome) -->
+            <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 space-y-1">
+              <div class="flex justify-between text-[10px] text-slate-300">
+                <span class="font-semibold">Tamanho do Detalhe</span>
+                <span id="embSizeVal_${idx}" class="font-mono text-amber-400 font-bold">${emb.size} mm</span>
               </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <div class="flex justify-between text-[10px] text-slate-400">
-                    <span>Tamanho</span>
-                    <span id="embSizeVal_${idx}" class="font-mono text-amber-400">${emb.size} mm</span>
-                  </div>
-                  <input type="range" min="15" max="110" value="${emb.size}" oninput="updateEmblemField(${idx}, 'size', this.value)" class="w-full accent-amber-500 cursor-pointer">
+              <input type="range" min="15" max="110" value="${emb.size}" oninput="updateEmblemField(${idx}, 'size', this.value)" class="w-full accent-amber-500 cursor-pointer">
+            </div>
+
+            <!-- Bloco C: Transformação Padronizada (Pos X, Pos Y, Rotação) -->
+            <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 grid grid-cols-3 gap-2">
+              <div>
+                <div class="flex justify-between text-[10px] text-slate-400">
+                  <span>Pos X</span>
+                  <span id="embXVal_${idx}" class="font-mono text-amber-400">${emb.x}</span>
                 </div>
-                <div>
-                  <div class="flex justify-between text-[10px] text-slate-400">
-                    <span>Rotação</span>
-                    <span id="embRotVal_${idx}" class="font-mono text-amber-400">${emb.rot}°</span>
-                  </div>
-                  <input type="range" min="-90" max="90" value="${emb.rot}" oninput="updateEmblemField(${idx}, 'rot', this.value)" class="w-full accent-amber-500 cursor-pointer">
+                <input type="range" min="-115" max="115" value="${emb.x}" oninput="updateEmblemField(${idx}, 'x', this.value)" class="w-full accent-amber-500 cursor-pointer">
+              </div>
+              <div>
+                <div class="flex justify-between text-[10px] text-slate-400">
+                  <span>Pos Y</span>
+                  <span id="embYVal_${idx}" class="font-mono text-amber-400">${emb.y}</span>
                 </div>
+                <input type="range" min="-115" max="115" value="${emb.y}" oninput="updateEmblemField(${idx}, 'y', this.value)" class="w-full accent-amber-500 cursor-pointer">
+              </div>
+              <div>
+                <div class="flex justify-between text-[10px] text-slate-400">
+                  <span>Rotação</span>
+                  <span id="embRotVal_${idx}" class="font-mono text-amber-400">${emb.rot}°</span>
+                </div>
+                <input type="range" min="-90" max="90" value="${emb.rot}" oninput="updateEmblemField(${idx}, 'rot', this.value)" class="w-full accent-amber-500 cursor-pointer">
               </div>
             </div>
           </div>
@@ -893,12 +977,95 @@
     }
 
     /* =========================================================
+       FERRAMENTAS DE MANIPULAÇÃO NO ORBIT (MOVER, GIRAR, TAMANHO)
+       ========================================================= */
+    function setOrbitToolMode(mode) {
+      orbitToolMode = mode;
+      const buttons = {
+        move: document.getElementById('btnToolMove'),
+        rotate: document.getElementById('btnToolRotate'),
+        scale: document.getElementById('btnToolScale'),
+        camera: document.getElementById('btnToolCamera')
+      };
+      const activeClass = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-600 text-white transition flex items-center gap-1 shadow-sm';
+      const inactiveClass = 'px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center gap-1';
+
+      Object.keys(buttons).forEach(k => {
+        if (buttons[k]) buttons[k].className = (k === mode) ? activeClass : inactiveClass;
+      });
+    }
+
+    function refreshSelectedPartQuickHud() {
+      const sizeEl = document.getElementById('hudQuickSizeVal');
+      const rotEl = document.getElementById('hudQuickRotVal');
+      if (!sizeEl || !rotEl || !selectedPart.type) return;
+
+      if (selectedPart.type === 'base') {
+        sizeEl.textContent = `${Math.round(state.baseSize)} mm`;
+        rotEl.textContent = `${Math.round(state.baseRotation)}°`;
+      } else if (selectedPart.type === 'name') {
+        sizeEl.textContent = `${Math.round(state.nameSize)} mm`;
+        rotEl.textContent = `${Math.round(state.nameRotation)}°`;
+      } else if (selectedPart.type === 'emblem') {
+        const emb = state.emblems[selectedPart.emblemIndex];
+        if (emb) {
+          sizeEl.textContent = `${Math.round(emb.size)} mm`;
+          rotEl.textContent = `${Math.round(emb.rot)}°`;
+        }
+      }
+    }
+
+    function nudgeSelectedPart(action, delta) {
+      if (!selectedPart.type) return;
+      const profile = PRINTER_PROFILES[state.printerProfile] || PRINTER_PROFILES.kobra_x;
+
+      if (selectedPart.type === 'base') {
+        if (action === 'scale') {
+          state.baseSize = Math.max(100, Math.min(profile.maxRecommendedLetter, state.baseSize + delta));
+        } else if (action === 'rotate') {
+          state.baseRotation = Math.max(-45, Math.min(45, state.baseRotation + delta));
+        } else if (action === 'resetRot' || action === 'center') {
+          state.baseRotation = 0;
+        }
+      } else if (selectedPart.type === 'name') {
+        if (action === 'scale') {
+          state.nameSize = Math.max(40, Math.min(240, state.nameSize + delta));
+        } else if (action === 'rotate') {
+          state.nameRotation = Math.max(-45, Math.min(45, state.nameRotation + delta));
+        } else if (action === 'center') {
+          state.namePosX = 0;
+          state.namePosY = 0;
+        } else if (action === 'resetRot') {
+          state.nameRotation = 0;
+        }
+      } else if (selectedPart.type === 'emblem') {
+        const emb = state.emblems[selectedPart.emblemIndex];
+        if (!emb) return;
+        if (action === 'scale') {
+          emb.size = Math.max(15, Math.min(110, emb.size + delta));
+        } else if (action === 'rotate') {
+          emb.rot = Math.max(-90, Math.min(90, emb.rot + delta));
+        } else if (action === 'center') {
+          emb.x = 0;
+          emb.y = 0;
+        } else if (action === 'resetRot') {
+          emb.rot = 0;
+        }
+      }
+
+      syncSidebarControlsFromState();
+      recordStateChange(true);
+      rebuild3DModel();
+    }
+
+    /* =========================================================
        SISTEMA DE SELEÇÃO BIDIRECIONAL (ORBIT 3D <-> SIDEBAR)
        ========================================================= */
     function selectPart(type, emblemIndex = null, scrollToSidebar = true) {
       selectedPart = { type, emblemIndex };
       updateSidebarSelectionHighlight(scrollToSidebar);
       update3DSelectionHighlight();
+      refreshSelectedPartQuickHud();
     }
 
     function clearPartSelection() {
@@ -1039,8 +1206,9 @@
         scene.add(selectionBoxHelper);
 
         if (hud && hudText) {
-          hudText.textContent = `Selecionado: ${labelName}`;
+          hudText.textContent = labelName;
           hud.classList.remove('hidden');
+          refreshSelectedPartQuickHud();
         }
       } else if (hud) {
         hud.classList.add('hidden');
@@ -1073,10 +1241,10 @@
         emb[field] = num;
         if (field === 'x') {
           const el = document.getElementById(`embXVal_${index}`);
-          if (el) el.textContent = `${Math.round(num)} mm`;
+          if (el) el.textContent = `${Math.round(num)}`;
         } else if (field === 'y') {
           const el = document.getElementById(`embYVal_${index}`);
-          if (el) el.textContent = `${Math.round(num)} mm`;
+          if (el) el.textContent = `${Math.round(num)}`;
         } else if (field === 'size') {
           const el = document.getElementById(`embSizeVal_${index}`);
           if (el) el.textContent = `${Math.round(num)} mm`;
@@ -1084,13 +1252,14 @@
           const el = document.getElementById(`embRotVal_${index}`);
           if (el) el.textContent = `${Math.round(num)}°`;
         }
+        refreshSelectedPartQuickHud();
         recordStateChange(false);
       }
       rebuild3DModel();
     }
 
     let scene, camera, renderer, controls;
-    let baseGroup, nameGroup, emblemGroup, plate3Group;
+    let baseGroup, nameGroup, emblemGroup, plate3Group, plate4Group;
     let bedGroup = null;
 
     /**
@@ -2146,56 +2315,58 @@
     }
 
     /**
-     * Algoritmo de Nesting 2D por Clusterização Compacta (Mínimo Deslocamento do Bico / Travel Move):
-     * - Posiciona a primeira peça interna o mais próximo possível da Letra Base.
-     * - Agrupa todas as peças seguintes coladas umas às outras em uma única ilha compacta (espaçamento de ~2mm),
-     *   evitando que a cabeça de impressão viaje pelos cantos da mesa!
-     * - As peças que não couberem na Placa 1 vão agrupadas no centro da Placa 3!
+     * Algoritmo de Nesting 2D com Anti-Colisão Booleana Exata e Espaçamento Mínimo Garantido (>= 0.75 mm):
+     * - Corrige definitivamente a sobreposição de peças internas (nunca coloca duas peças no mesmo lugar).
+     * - Usa tanto verificação rápida de Bounding Box (AABB + folga mínima) quanto interseção booleana Clipper.
+     * - Garante espaço livre mínimo configurável (padrão 1.20 mm, mínimo 0.75 mm) entre todas as peças internas!
      */
     function packInlaysOntoPlates(inlayPieces, baseLetterPolys, scaleFactor = 1000) {
       const plate1Polys = [];
       const plate3Polys = [];
       if (!inlayPieces || inlayPieces.length === 0) return { plate1Polys, plate3Polys };
 
-      const halfBedSafe = (state.bedSizeMM / 2) - 8; // Margem de segurança de 8mm das bordas da mesa
+      const minGapMM = Math.max(0.75, state.inlayMinGapMM || 1.20);
+      const baseGuardMM = Math.max(2.2, minGapMM + 1.0);
+      const halfBedSafe = (state.bedSizeMM / 2) - 8;
 
-      // Ordena as peças da maior para a menor para facilitar o empacotamento compacto
+      // Ordena as peças da maior para a menor para empacotar primeiro as maiores
       const sortedPieces = [...inlayPieces].sort((a, b) => (b.wMM * b.hMM) - (a.wMM * a.hMM));
 
-      // Expande a Letra Base em 3.5 mm para criar zona segura sem colisão na Placa 1
-      const coGuard = new ClipperLib.ClipperOffset(2.0, 0.4);
-      coGuard.AddPaths(baseLetterPolys, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+      // Zona ocupada na Placa 1 começa com a Letra Base expandida pela margem segura
       let occupiedPlate1 = new ClipperLib.Paths();
-      coGuard.Execute(occupiedPlate1, 3.5 * scaleFactor);
+      if (baseLetterPolys && baseLetterPolys.length > 0) {
+        const coGuard = new ClipperLib.ClipperOffset(2.0, 0.25);
+        coGuard.AddPaths(baseLetterPolys, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+        coGuard.Execute(occupiedPlate1, baseGuardMM * scaleFactor);
+      }
 
-      // Gera malha fina de pontos candidatos (passo de 5 mm para encaixe bem próximo)
+      // Lista de retângulos delimitadores (AABBs) das peças já colocadas na Placa 1 para rejeição instantânea de sobreposição
+      const placedBoxesP1 = [];
+      const placedCenters = [];
+
+      // Malha densa de pontos candidatos (passo de 2.5 mm para aproveitar cada espaço próximo sem pular demais)
       const candidateSpots = [];
-      const stepMM = 5;
-      for (let y = -halfBedSafe + 4; y <= halfBedSafe - 4; y += stepMM) {
-        for (let x = -halfBedSafe + 4; x <= halfBedSafe - 4; x += stepMM) {
+      const stepMM = 2.5;
+      for (let y = -halfBedSafe + 3; y <= halfBedSafe - 3; y += stepMM) {
+        for (let x = -halfBedSafe + 3; x <= halfBedSafe - 3; x += stepMM) {
           candidateSpots.push({ x, y, distCenter: Math.hypot(x, y) });
         }
       }
 
-      // Guarda as coordenadas (x, y) das peças já posicionadas na Placa 1 para atrair as próximas para o mesmo grupo!
-      const placedCenters = [];
-
-      // Cursor compacto próximo ao centro da Placa 3 caso transborde da Placa 1
-      const p3ClusterWidth = 70;
-      let p3CursorX = -p3ClusterWidth / 2;
-      let p3CursorY = 20;
+      // Controle de layout em grade limpa e sem sobreposição para a Placa 3 (caso transborde da Placa 1)
+      const p3MaxWidth = Math.min(120, state.bedSizeMM - 30);
+      let p3CursorX = -p3MaxWidth / 2;
+      let p3CursorY = 30;
       let p3RowMaxH = 0;
 
       for (const piece of sortedPieces) {
         let placedOnPlate1 = false;
-        const halfW = piece.wMM / 2 + 2.5;
-        const halfH = piece.hMM / 2 + 2.5;
+        const halfW = piece.wMM / 2;
+        const halfH = piece.hMM / 2;
 
         if (placedCenters.length === 0) {
-          // 1ª Peça: Ordena do ponto MAIS PRÓXIMO da Letra Base (centro) para fora
           candidateSpots.sort((a, b) => a.distCenter - b.distCenter);
         } else {
-          // Peças seguintes: Ordena pela MENOR distância até as peças já colocadas (formando um único bloco compacto!)
           const anchor = placedCenters[0];
           candidateSpots.sort((a, b) => {
             let minDistA = Infinity;
@@ -2206,7 +2377,6 @@
               if (dA < minDistA) minDistA = dA;
               if (dB < minDistB) minDistB = dB;
             }
-            // Peso principal: ficar próximo das outras peças; peso secundário: continuar perto da 1ª âncora e da letra
             const scoreA = minDistA + Math.hypot(a.x - anchor.x, a.y - anchor.y) * 0.25 + a.distCenter * 0.05;
             const scoreB = minDistB + Math.hypot(b.x - anchor.x, b.y - anchor.y) * 0.25 + b.distCenter * 0.05;
             return scoreA - scoreB;
@@ -2214,31 +2384,82 @@
         }
 
         for (const spot of candidateSpots) {
-          if (spot.x - halfW < -halfBedSafe || spot.x + halfW > halfBedSafe || spot.y - halfH < -halfBedSafe || spot.y + halfH > halfBedSafe) {
+          // 1. Verifica limites da mesa PEI
+          if (
+            spot.x - halfW - minGapMM < -halfBedSafe ||
+            spot.x + halfW + minGapMM > halfBedSafe ||
+            spot.y - halfH - minGapMM < -halfBedSafe ||
+            spot.y + halfH + minGapMM > halfBedSafe
+          ) {
             continue;
           }
 
+          // 2. Verificação rápida e infalível de AABB + minGapMM contra todas as peças internas já posicionadas
+          // Isso garante que duas peças NUNCA fiquem uma sobre a outra ou a menos de minGapMM (ex: >= 0.75 mm)!
+          const candMinX = spot.x - halfW - minGapMM;
+          const candMaxX = spot.x + halfW + minGapMM;
+          const candMinY = spot.y - halfH - minGapMM;
+          const candMaxY = spot.y + halfH + minGapMM;
+
+          let boxOverlap = false;
+          for (const box of placedBoxesP1) {
+            if (candMinX < box.maxX && candMaxX > box.minX && candMinY < box.maxY && candMaxY > box.minY) {
+              boxOverlap = true;
+              break;
+            }
+          }
+          if (boxOverlap) continue;
+
+          // 3. Translada o polígono da peça para o ponto candidato
           const dx = Math.round(spot.x * scaleFactor - piece.cx);
           const dy = Math.round(spot.y * scaleFactor - piece.cy);
           const candidatePoly = piece.origPoly.map(pt => ({ X: pt.X + dx, Y: pt.Y + dy }));
 
-          // Verifica interseção booleana com a Letra Base e com as peças já alocadas
-          const cprCheck = new ClipperLib.Clipper();
-          cprCheck.AddPath(candidatePoly, ClipperLib.PolyType.ptSubject, true);
-          cprCheck.AddPaths(occupiedPlate1, ClipperLib.PolyType.ptClip, true);
-          const intersection = new ClipperLib.Paths();
-          cprCheck.Execute(ClipperLib.ClipType.ctIntersection, intersection, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+          // 4. Verifica colisão exata com a Letra Base (e peças anteriores) via Clipper
+          let hasCollision = false;
+          if (occupiedPlate1.length > 0) {
+            const cprCheck = new ClipperLib.Clipper();
+            cprCheck.AddPath(candidatePoly, ClipperLib.PolyType.ptSubject, true);
+            cprCheck.AddPaths(occupiedPlate1, ClipperLib.PolyType.ptClip, true);
+            const intersection = new ClipperLib.Paths();
+            cprCheck.Execute(
+              ClipperLib.ClipType.ctIntersection,
+              intersection,
+              ClipperLib.PolyFillType.pftNonZero,
+              ClipperLib.PolyFillType.pftNonZero
+            );
+            hasCollision = intersection.length > 0;
+          }
 
-          if (intersection.length === 0) {
+          if (!hasCollision) {
             plate1Polys.push(candidatePoly);
             placedCenters.push({ x: spot.x, y: spot.y });
+            placedBoxesP1.push({
+              minX: spot.x - halfW,
+              maxX: spot.x + halfW,
+              minY: spot.y - halfH,
+              maxY: spot.y + halfH
+            });
 
-            // Margem de segurança de 4.2 mm entre as pecinhas internas para evitar batida de bico e vazamento de filamento
+            // Expande o polígono recém-colocado em minGapMM (mínimo >= 0.75mm) e une à zona ocupada
             const coPiece = new ClipperLib.ClipperOffset(2.0, 0.25);
             coPiece.AddPath(candidatePoly, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
             const pieceGuard = new ClipperLib.Paths();
-            coPiece.Execute(pieceGuard, 4.2 * scaleFactor);
-            occupiedPlate1.push(...pieceGuard);
+            coPiece.Execute(pieceGuard, minGapMM * scaleFactor);
+
+            const cprMerge = new ClipperLib.Clipper();
+            if (occupiedPlate1.length > 0) {
+              cprMerge.AddPaths(occupiedPlate1, ClipperLib.PolyType.ptSubject, true);
+            }
+            cprMerge.AddPaths(pieceGuard, ClipperLib.PolyType.ptSubject, true);
+            const mergedOccupied = new ClipperLib.Paths();
+            cprMerge.Execute(
+              ClipperLib.ClipType.ctUnion,
+              mergedOccupied,
+              ClipperLib.PolyFillType.pftNonZero,
+              ClipperLib.PolyFillType.pftNonZero
+            );
+            occupiedPlate1 = mergedOccupied;
 
             placedOnPlate1 = true;
             break;
@@ -2246,10 +2467,11 @@
         }
 
         if (!placedOnPlate1) {
-          // Agrupa na Placa 3 respeitando a margem segura de 4.0 mm
-          if (p3CursorX + piece.wMM > p3ClusterWidth / 2) {
-            p3CursorX = -p3ClusterWidth / 2;
-            p3CursorY -= (p3RowMaxH + 4.0);
+          // Posiciona na Placa 3 com espaçamento mínimo garantido (minGapMM >= 0.75 mm)
+          const p3Gap = Math.max(1.2, minGapMM);
+          if (p3CursorX + piece.wMM > p3MaxWidth / 2) {
+            p3CursorX = -p3MaxWidth / 2;
+            p3CursorY -= (p3RowMaxH + p3Gap);
             p3RowMaxH = 0;
           }
           const targetX = p3CursorX + piece.wMM / 2;
@@ -2259,12 +2481,223 @@
           const p3Poly = piece.origPoly.map(pt => ({ X: pt.X + dx, Y: pt.Y + dy }));
           plate3Polys.push(p3Poly);
 
-          p3CursorX += piece.wMM + 4.0;
+          p3CursorX += piece.wMM + p3Gap;
           p3RowMaxH = Math.max(p3RowMaxH, piece.hMM);
         }
       }
 
       return { plate1Polys, plate3Polys };
+    }
+
+    /**
+     * Algoritmo de Anti-Sobreposição e Adição de Placa Extra para a PLACA 2 (Nome + Detalhes/Apliques):
+     * - Na Montagem 3D ('assemble'), cada detalhe fica na posição exata escolhida pelo usuário sobre a letra.
+     * - Na Placa 2 ('plate2' e exportação STL Placa 2):
+     *   1. Verifica se algum detalhe se sobrepõe ao Nome Cursivo, a outro detalhe, ou sai da mesa (respeitando o espaço mínimo >= 0.75 mm).
+     *   2. Se não houver colisão na posição original, mantém próximo; se houver sobreposição, reposiciona automaticamente no espaço livre mais próximo na Placa 2!
+     *   3. Se não couber na Placa 2, envia automaticamente o aplique excedente para a Placa 4 (Apliques Extra)!
+     */
+    function packEmblemsForPlate2(emblemRenderList, placedNamePolys, scaleFactor = 1000) {
+      const plate2Items = [];
+      const plate4Items = [];
+      if (!emblemRenderList || emblemRenderList.length === 0) {
+        return { plate2Items, plate4Items };
+      }
+
+      const minGapMM = Math.max(0.75, state.inlayMinGapMM || 1.20);
+      const halfBedSafe = (state.bedSizeMM / 2) - 8;
+
+      // Zona ocupada na Placa 2 inicia com o Nome Cursivo expandido pela margem mínima (>= 0.75 mm)
+      let occupiedPlate2 = new ClipperLib.Paths();
+      const placedBoxesP2 = [];
+      const placedCentersP2 = [];
+
+      if (placedNamePolys && placedNamePolys.length > 0) {
+        const coName = new ClipperLib.ClipperOffset(2.0, 0.25);
+        coName.AddPaths(placedNamePolys, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+        coName.Execute(occupiedPlate2, minGapMM * scaleFactor);
+
+        let nMinX = Infinity, nMaxX = -Infinity, nMinY = Infinity, nMaxY = -Infinity;
+        for (const p of placedNamePolys) {
+          for (const pt of p) {
+            if (pt.X < nMinX) nMinX = pt.X;
+            if (pt.X > nMaxX) nMaxX = pt.X;
+            if (pt.Y < nMinY) nMinY = pt.Y;
+            if (pt.Y > nMaxY) nMaxY = pt.Y;
+          }
+        }
+        if (nMinX < Infinity) {
+          placedCentersP2.push({
+            x: ((nMinX + nMaxX) / 2) / scaleFactor,
+            y: ((nMinY + nMaxY) / 2) / scaleFactor
+          });
+        }
+      }
+
+      // Pontos candidatos na mesa para realocar apliques que se sobreponham
+      const candidateSpots = [];
+      const stepMM = 3.5;
+      for (let y = -halfBedSafe + 4; y <= halfBedSafe - 4; y += stepMM) {
+        for (let x = -halfBedSafe + 4; x <= halfBedSafe - 4; x += stepMM) {
+          candidateSpots.push({ x, y, distCenter: Math.hypot(x, y) });
+        }
+      }
+
+      // Cursores para organização em grade na Placa 4 (caso não caibam todos na Placa 2)
+      const p4MaxWidth = Math.min(160, state.bedSizeMM - 30);
+      let p4CursorX = -p4MaxWidth / 2;
+      let p4CursorY = 45;
+      let p4RowMaxH = 0;
+
+      for (const item of emblemRenderList) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const poly of item.framePolys) {
+          for (const pt of poly) {
+            if (pt.X < minX) minX = pt.X;
+            if (pt.X > maxX) maxX = pt.X;
+            if (pt.Y < minY) minY = pt.Y;
+            if (pt.Y > maxY) maxY = pt.Y;
+          }
+        }
+        if (minX === Infinity) continue;
+
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        const wMM = (maxX - minX) / scaleFactor;
+        const hMM = (maxY - minY) / scaleFactor;
+        const halfW = wMM / 2;
+        const halfH = hMM / 2;
+        const origXMM = cx / scaleFactor;
+        const origYMM = cy / scaleFactor;
+
+        // Função auxiliar para testar se o detalhe cabe em (testXMM, testYMM) na Placa 2 sem sobrepor nada
+        const tryPlaceAt = (testXMM, testYMM) => {
+          if (
+            testXMM - halfW - minGapMM < -halfBedSafe ||
+            testXMM + halfW + minGapMM > halfBedSafe ||
+            testYMM - halfH - minGapMM < -halfBedSafe ||
+            testYMM + halfH + minGapMM > halfBedSafe
+          ) {
+            return null;
+          }
+
+          // Verificação rápida AABB + minGapMM contra outros apliques já posicionados na Placa 2
+          const cMinX = testXMM - halfW - minGapMM;
+          const cMaxX = testXMM + halfW + minGapMM;
+          const cMinY = testYMM - halfH - minGapMM;
+          const cMaxY = testYMM + halfH + minGapMM;
+          for (const box of placedBoxesP2) {
+            if (cMinX < box.maxX && cMaxX > box.minX && cMinY < box.maxY && cMaxY > box.minY) {
+              return null;
+            }
+          }
+
+          const dx = Math.round(testXMM * scaleFactor - cx);
+          const dy = Math.round(testYMM * scaleFactor - cy);
+          const movedPolys = item.framePolys.map(poly => poly.map(pt => ({ X: pt.X + dx, Y: pt.Y + dy })));
+
+          if (occupiedPlate2.length > 0) {
+            const cprCheck = new ClipperLib.Clipper();
+            cprCheck.AddPaths(movedPolys, ClipperLib.PolyType.ptSubject, true);
+            cprCheck.AddPaths(occupiedPlate2, ClipperLib.PolyType.ptClip, true);
+            const inter = new ClipperLib.Paths();
+            cprCheck.Execute(
+              ClipperLib.ClipType.ctIntersection,
+              inter,
+              ClipperLib.PolyFillType.pftNonZero,
+              ClipperLib.PolyFillType.pftNonZero
+            );
+            if (inter.length > 0) return null;
+          }
+
+          return movedPolys;
+        };
+
+        // 1º Tenta manter na posição original se não colidir com o Nome nem com outro Detalhe
+        let validPolys = tryPlaceAt(origXMM, origYMM);
+        let finalCenter = { x: origXMM, y: origYMM };
+
+        // 2º Se houver sobreposição na posição original, busca o ponto livre mais próximo do grupo na Placa 2
+        if (!validPolys) {
+          candidateSpots.sort((a, b) => {
+            let minDistA = Math.hypot(a.x - origXMM, a.y - origYMM);
+            let minDistB = Math.hypot(b.x - origXMM, b.y - origYMM);
+            for (const c of placedCentersP2) {
+              minDistA = Math.min(minDistA, Math.hypot(a.x - c.x, a.y - c.y));
+              minDistB = Math.min(minDistB, Math.hypot(b.x - c.x, b.y - c.y));
+            }
+            return (minDistA + a.distCenter * 0.1) - (minDistB + b.distCenter * 0.1);
+          });
+
+          for (const spot of candidateSpots) {
+            const candidate = tryPlaceAt(spot.x, spot.y);
+            if (candidate) {
+              validPolys = candidate;
+              finalCenter = { x: spot.x, y: spot.y };
+              break;
+            }
+          }
+        }
+
+        if (validPolys) {
+          plate2Items.push({
+            emblemIndex: item.emblemIndex,
+            mode: item.mode,
+            framePolys: validPolys
+          });
+          placedCentersP2.push(finalCenter);
+          placedBoxesP2.push({
+            minX: finalCenter.x - halfW,
+            maxX: finalCenter.x + halfW,
+            minY: finalCenter.y - halfH,
+            maxY: finalCenter.y + halfH
+          });
+
+          // Expande o aplique posicionado com minGapMM e une à zona ocupada da Placa 2
+          const coItem = new ClipperLib.ClipperOffset(2.0, 0.25);
+          coItem.AddPaths(validPolys, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon);
+          const itemGuard = new ClipperLib.Paths();
+          coItem.Execute(itemGuard, minGapMM * scaleFactor);
+
+          const cprMerge = new ClipperLib.Clipper();
+          if (occupiedPlate2.length > 0) {
+            cprMerge.AddPaths(occupiedPlate2, ClipperLib.PolyType.ptSubject, true);
+          }
+          cprMerge.AddPaths(itemGuard, ClipperLib.PolyType.ptSubject, true);
+          const merged = new ClipperLib.Paths();
+          cprMerge.Execute(
+            ClipperLib.ClipType.ctUnion,
+            merged,
+            ClipperLib.PolyFillType.pftNonZero,
+            ClipperLib.PolyFillType.pftNonZero
+          );
+          occupiedPlate2 = merged;
+        } else {
+          // 3º Não coube na Placa 2: adiciona automaticamente na Placa 4 (Apliques Extra) sem sobreposição!
+          const p4Gap = Math.max(2.0, minGapMM);
+          if (p4CursorX + wMM > p4MaxWidth / 2) {
+            p4CursorX = -p4MaxWidth / 2;
+            p4CursorY -= (p4RowMaxH + p4Gap);
+            p4RowMaxH = 0;
+          }
+          const targetX = p4CursorX + halfW;
+          const targetY = p4CursorY - halfH;
+          const dx = Math.round(targetX * scaleFactor - cx);
+          const dy = Math.round(targetY * scaleFactor - cy);
+          const p4Polys = item.framePolys.map(poly => poly.map(pt => ({ X: pt.X + dx, Y: pt.Y + dy })));
+
+          plate4Items.push({
+            emblemIndex: item.emblemIndex,
+            mode: item.mode,
+            framePolys: p4Polys
+          });
+
+          p4CursorX += wMM + p4Gap;
+          p4RowMaxH = Math.max(p4RowMaxH, hMM);
+        }
+      }
+
+      return { plate2Items, plate4Items };
     }
 
     /* =========================================================
@@ -2275,14 +2708,14 @@
     function rebuild3DModel() {
       clearTimeout(rebuildDebounceTimer);
       rebuildDebounceTimer = setTimeout(async () => {
-        if (!scene || !baseGroup || !nameGroup || !emblemGroup || !plate3Group) return;
+        if (!scene || !baseGroup || !nameGroup || !emblemGroup || !plate3Group || !plate4Group) return;
 
         const badge = document.getElementById('loadingBadge');
         if (badge) badge.classList.remove('hidden');
 
         try {
           // Limpa geometrias anteriores
-          for (const grp of [baseGroup, nameGroup, emblemGroup, plate3Group]) {
+          for (const grp of [baseGroup, nameGroup, emblemGroup, plate3Group, plate4Group]) {
             while (grp.children.length > 0) {
               const obj = grp.children.pop();
               if (obj.geometry) obj.geometry.dispose();
@@ -2441,18 +2874,18 @@
             });
             const floorMesh = new THREE.Mesh(floorGeo, floorMat);
             floorMesh.position.set(0, 0, bottomHeightZ + 0.05);
-            floorMesh.userData.isVisualHelperOnly = true; // Não entra no STL para não duplicar faces
+            InlayMarkVisualOnly(floorMesh);
             baseGroup.add(floorMesh);
           }
 
-          // 5. CONSTRUÇÃO DO NOME CURSIVO E APLIQUES CHAPADOS (CHAPA 2)
-          const nameShapes = clipperPathsToThreeShapes(placedNamePolys, SCALE);
+          // 5. MALHA 3D DO NOME CURSIVO (CHAPA 2)
           const nameMat = new THREE.MeshStandardMaterial({
             color: new THREE.Color(state.overlayColor),
             roughness: 0.35,
-            metalness: 0.05
+            metalness: 0.10
           });
 
+          const nameShapes = clipperPathsToThreeShapes(placedNamePolys, SCALE);
           if (nameShapes.length > 0) {
             const nameGeo = new THREE.ExtrudeGeometry(nameShapes, {
               depth: state.nameZThicknessMM,
@@ -2460,25 +2893,24 @@
               bevelThickness: 0.18,
               bevelSize: 0.14,
               bevelSegments: 3,
-              curveSegments: 36
+              curveSegments: 48
             });
-
             const nameMesh = new THREE.Mesh(nameGeo, nameMat);
             nameMesh.castShadow = true;
             nameMesh.receiveShadow = true;
             nameMesh.userData.dragType = 'name';
-
-            if (state.viewMode === 'assemble') {
-              nameMesh.position.set(0, 0, bottomHeightZ);
-            } else {
-              nameMesh.position.set(0, 0, 0);
-            }
-
+            const nameZPos = state.viewMode === 'assemble' ? bottomHeightZ : 0;
+            nameMesh.position.set(0, 0, nameZPos);
             nameGroup.add(nameMesh);
           }
 
-          // 6. DETALHES / APLIQUES NA CHAPA 2 (Malhas individuais para permitir seleção e arraste no 3D Orbit!)
-          for (const item of individualEmblemRenderList) {
+          // 6. DETALHES / APLIQUES NA CHAPA 2 E CHAPA 4 EXTRA (Sistema Anti-Sobreposição >= 0.75 mm)
+          const packedEmblems = packEmblemsForPlate2(individualEmblemRenderList, placedNamePolys, SCALE);
+          const activePlate2Emblems = (state.viewMode === 'assemble')
+            ? individualEmblemRenderList
+            : packedEmblems.plate2Items;
+
+          for (const item of activePlate2Emblems) {
             const itemShapes = clipperPathsToThreeShapes(item.framePolys, SCALE);
             if (itemShapes.length > 0) {
               const itemGeo = new THREE.ExtrudeGeometry(itemShapes, {
@@ -2500,6 +2932,38 @@
               itemMesh.position.set(0, 0, zPos);
               emblemGroup.add(itemMesh);
             }
+          }
+
+          // 6.1 PLACA 4 AUTOMÁTICA: Apliques que transbordaram da Placa 2 para não sobrepor
+          const hasPlate4 = packedEmblems.plate4Items.length > 0;
+          if (hasPlate4) {
+            for (const p4Item of packedEmblems.plate4Items) {
+              const p4Shapes = clipperPathsToThreeShapes(p4Item.framePolys, SCALE);
+              if (p4Shapes.length > 0) {
+                const p4Geo = new THREE.ExtrudeGeometry(p4Shapes, {
+                  depth: state.nameZThicknessMM,
+                  bevelEnabled: true,
+                  bevelThickness: 0.16,
+                  bevelSize: 0.12,
+                  bevelSegments: 3,
+                  curveSegments: 48
+                });
+                const p4Mesh = new THREE.Mesh(p4Geo, nameMat.clone());
+                p4Mesh.castShadow = true;
+                p4Mesh.receiveShadow = true;
+                p4Mesh.position.set(0, 0, 0);
+                plate4Group.add(p4Mesh);
+              }
+            }
+          }
+
+          // Mostra ou oculta o botão da Placa 4 dinamicamente
+          const btnP4 = document.getElementById('btnViewPlate4');
+          const btnExp4 = document.getElementById('btnExportSTL4');
+          if (btnP4) btnP4.classList.toggle('hidden', !hasPlate4);
+          if (btnExp4) btnExp4.classList.toggle('hidden', !hasPlate4);
+          if (!hasPlate4 && state.viewMode === 'plate4') {
+            state.viewMode = 'plate2';
           }
 
           // 6.3 PEÇAS INTERNAS DOS ITENS "POR CIMA (COLADO)" NA MESMA COR DA LETRA GRANDE!
@@ -2530,44 +2994,48 @@
 
           // Na Placa 1 (e na exportação STL da Chapa 1), adiciona as peças internas que couberam na mesa (Z = 0) junto com a Letra Base!
           if (packedInlays.plate1Polys.length > 0) {
-            const p1InlayShapes = clipperPathsToThreeShapes(packedInlays.plate1Polys, SCALE);
-            if (p1InlayShapes.length > 0) {
-              const p1InlayGeo = new THREE.ExtrudeGeometry(p1InlayShapes, {
-                depth: state.nameZThicknessMM,
-                bevelEnabled: true,
-                bevelThickness: 0.14,
-                bevelSize: 0.10,
-                bevelSegments: 2,
-                curveSegments: 48
-              });
-              const p1InlayMesh = new THREE.Mesh(p1InlayGeo, baseMat);
-              p1InlayMesh.position.set(0, 0, 0);
-              p1InlayMesh.castShadow = true;
-              p1InlayMesh.receiveShadow = true;
-              // Visível na Placa 1 e sempre incluído no STL da Placa 1 (no Assemble View fica oculto na mesa pois já aparece montado no topo!)
-              p1InlayMesh.visible = (state.viewMode !== 'assemble');
-              baseGroup.add(p1InlayMesh);
+            // Converte cada polígono de peça interna individualmente para que nunca se fundam ou se anulem
+            for (const singleInlayPoly of packedInlays.plate1Polys) {
+              const p1InlayShapes = clipperPathsToThreeShapes([singleInlayPoly], SCALE);
+              if (p1InlayShapes.length > 0) {
+                const p1InlayGeo = new THREE.ExtrudeGeometry(p1InlayShapes, {
+                  depth: state.nameZThicknessMM,
+                  bevelEnabled: true,
+                  bevelThickness: 0.12,
+                  bevelSize: 0.08,
+                  bevelSegments: 2,
+                  curveSegments: 48
+                });
+                const p1InlayMesh = new THREE.Mesh(p1InlayGeo, baseMat);
+                p1InlayMesh.position.set(0, 0, 0);
+                p1InlayMesh.castShadow = true;
+                p1InlayMesh.receiveShadow = true;
+                p1InlayMesh.visible = (state.viewMode !== 'assemble');
+                baseGroup.add(p1InlayMesh);
+              }
             }
           }
 
           // Na Placa 3 (caso não tenham cabido todas na Placa 1), adiciona as peças excedentes na cor da Letra Base (Z = 0)!
           const hasPlate3 = packedInlays.plate3Polys.length > 0;
           if (hasPlate3) {
-            const p3InlayShapes = clipperPathsToThreeShapes(packedInlays.plate3Polys, SCALE);
-            if (p3InlayShapes.length > 0) {
-              const p3InlayGeo = new THREE.ExtrudeGeometry(p3InlayShapes, {
-                depth: state.nameZThicknessMM,
-                bevelEnabled: true,
-                bevelThickness: 0.14,
-                bevelSize: 0.10,
-                bevelSegments: 2,
-                curveSegments: 48
-              });
-              const p3InlayMesh = new THREE.Mesh(p3InlayGeo, baseMat);
-              p3InlayMesh.position.set(0, 0, 0);
-              p3InlayMesh.castShadow = true;
-              p3InlayMesh.receiveShadow = true;
-              plate3Group.add(p3InlayMesh);
+            for (const singleP3Poly of packedInlays.plate3Polys) {
+              const p3InlayShapes = clipperPathsToThreeShapes([singleP3Poly], SCALE);
+              if (p3InlayShapes.length > 0) {
+                const p3InlayGeo = new THREE.ExtrudeGeometry(p3InlayShapes, {
+                  depth: state.nameZThicknessMM,
+                  bevelEnabled: true,
+                  bevelThickness: 0.12,
+                  bevelSize: 0.08,
+                  bevelSegments: 2,
+                  curveSegments: 48
+                });
+                const p3InlayMesh = new THREE.Mesh(p3InlayGeo, baseMat);
+                p3InlayMesh.position.set(0, 0, 0);
+                p3InlayMesh.castShadow = true;
+                p3InlayMesh.receiveShadow = true;
+                plate3Group.add(p3InlayMesh);
+              }
             }
           }
 
@@ -2598,21 +3066,31 @@
             nameGroup.visible = true;
             emblemGroup.visible = true;
             plate3Group.visible = false;
+            plate4Group.visible = false;
           } else if (state.viewMode === 'plate1') {
             baseGroup.visible = true;
             nameGroup.visible = false;
             emblemGroup.visible = false;
             plate3Group.visible = false;
+            plate4Group.visible = false;
           } else if (state.viewMode === 'plate2') {
             baseGroup.visible = false;
             nameGroup.visible = true;
             emblemGroup.visible = true;
             plate3Group.visible = false;
+            plate4Group.visible = false;
           } else if (state.viewMode === 'plate3') {
             baseGroup.visible = false;
             nameGroup.visible = false;
             emblemGroup.visible = false;
             plate3Group.visible = true;
+            plate4Group.visible = false;
+          } else if (state.viewMode === 'plate4') {
+            baseGroup.visible = false;
+            nameGroup.visible = false;
+            emblemGroup.visible = false;
+            plate3Group.visible = false;
+            plate4Group.visible = true;
           }
 
           // Atualiza Labels de Dimensões Reais
@@ -2653,9 +3131,10 @@
       const bP1 = document.getElementById('btnViewPlate1');
       const bP2 = document.getElementById('btnViewPlate2');
       const bP3 = document.getElementById('btnViewPlate3');
+      const bP4 = document.getElementById('btnViewPlate4');
 
-      const activeClass = 'px-3 py-1 rounded-lg font-bold text-white bg-amber-600 transition shadow-sm';
-      const inactiveClass = 'px-3 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition';
+      const activeClass = 'px-3 py-1.5 rounded-lg font-bold text-white bg-amber-600 transition shadow-sm flex items-center gap-1.5';
+      const inactiveClass = 'px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5';
 
       if (bAss) bAss.className = mode === 'assemble' ? activeClass : inactiveClass;
       if (bP1) bP1.className = mode === 'plate1' ? activeClass : inactiveClass;
@@ -2663,6 +3142,10 @@
       if (bP3) {
         const isHidden = bP3.classList.contains('hidden');
         bP3.className = (mode === 'plate3' ? activeClass : inactiveClass) + (isHidden ? ' hidden' : '');
+      }
+      if (bP4) {
+        const isHidden = bP4.classList.contains('hidden');
+        bP4.className = (mode === 'plate4' ? activeClass : inactiveClass) + (isHidden ? ' hidden' : '');
       }
 
       rebuild3DModel();
@@ -2682,9 +3165,12 @@
       } else if (plateNumber === 2) {
         targetGroups = [nameGroup, emblemGroup];
         filename = `Chapa2_Nome_Apliques_${state.nameText}_${profile.fileTag}.stl`;
-      } else {
+      } else if (plateNumber === 3) {
         targetGroups = [plate3Group];
         filename = `Chapa3_Internos_Extras_CorBase_${state.baseLetter}_${profile.fileTag}.stl`;
+      } else {
+        targetGroups = [plate4Group];
+        filename = `Chapa4_Apliques_Extras_CorNome_${state.nameText}_${profile.fileTag}.stl`;
       }
 
       let stlString = "solid Model\n";
@@ -3096,11 +3582,16 @@ plate2_name();
       } else if (param === 'xyCompensationMM') {
         state.xyCompensationMM = parseFloat(value) || 0.26;
         document.getElementById('xyCompVal').textContent = `${state.xyCompensationMM.toFixed(2)} mm`;
+      } else if (param === 'inlayMinGapMM') {
+        state.inlayMinGapMM = Math.max(0.75, parseFloat(value) || 1.20);
+        const elGap = document.getElementById('inlayGapVal');
+        if (elGap) elGap.textContent = `${state.inlayMinGapMM.toFixed(2)} mm (Mín 0.75 mm)`;
       } else if (param === 'baseFont') {
         state.baseFont = value;
       } else if (param === 'nameFont') {
         state.nameFont = value;
       }
+      refreshSelectedPartQuickHud();
       recordStateChange(param === 'baseFont' || param === 'nameFont');
       rebuild3DModel();
     }
@@ -3191,7 +3682,7 @@ plate2_name();
         const hitMesh = hits[0].object;
         const dType = hitMesh.userData.dragType;
 
-        // Marca a peça clicada no 3D Orbit e destaca + rola até o card correspondente na Barra Lateral!
+        // Marca a peça clicada no 3D Orbit e destaca + rola até o card correspondente na Barra Lateral
         if (dType === 'name') {
           selectPart('name', null, true);
         } else if (dType === 'emblem') {
@@ -3200,27 +3691,34 @@ plate2_name();
           selectPart('base', null, true);
         }
 
-        // Se clicou na Letra Base sem segurar Shift, ela já ficou marcada na barra e no Orbit,
-        // e deixamos o OrbitControls girar a câmera normalmente.
-        // Se segurar Shift e clicar na Letra Base, gira a Letra Base na mesa!
-        if (dType === 'base' && !e.shiftKey) return;
+        // Se o modo da barra do Orbit for 'camera', apenas seleciona a peça e deixa o OrbitControls girar a câmera
+        if (orbitToolMode === 'camera') return;
+
+        // Determina a ação efetiva: atalhos Shift (girar) / Alt (escalar) ou o modo selecionado na barra do Orbit
+        let effectiveMode = orbitToolMode; // 'move' | 'rotate' | 'scale'
+        if (e.shiftKey) effectiveMode = 'rotate';
+        else if (e.altKey) effectiveMode = 'scale';
+
+        // Se clicou na Letra Base no modo 'move' (já que a base fica centrada na origem), permite girar a câmera a menos que esteja em 'rotate' ou 'scale'
+        if (dType === 'base' && effectiveMode === 'move') return;
 
         const planeHeight = hits[0].point.z;
         dragPlaneZ.constant = -planeHeight;
         if (!raycaster.ray.intersectPlane(dragPlaneZ, dragIntersectionPt)) return;
 
-        // Desativa temporariamente o giro da câmera do OrbitControls enquanto arrasta a peça
+        // Desativa temporariamente o giro da câmera do OrbitControls enquanto manipula a peça
         controls.enabled = false;
 
         if (dType === 'name') {
           activeDragTarget = {
             type: 'name',
-            mode: e.shiftKey ? 'rotate' : 'move',
+            mode: effectiveMode,
             mesh: hitMesh,
             startPlanePt: dragIntersectionPt.clone(),
             startX: state.namePosX || 0,
             startY: state.namePosY || 0,
             startRot: state.nameRotation || 0,
+            startSize: state.nameSize || 145,
             meshStartX: hitMesh.position.x,
             meshStartY: hitMesh.position.y,
             meshStartRotZ: hitMesh.rotation.z
@@ -3232,12 +3730,13 @@ plate2_name();
           activeDragTarget = {
             type: 'emblem',
             emblemIndex: idx,
-            mode: e.shiftKey ? 'rotate' : 'move',
+            mode: effectiveMode,
             mesh: hitMesh,
             startPlanePt: dragIntersectionPt.clone(),
             startX: emb.x,
             startY: emb.y,
             startRot: emb.rot,
+            startSize: emb.size,
             meshStartX: hitMesh.position.x,
             meshStartY: hitMesh.position.y,
             meshStartRotZ: hitMesh.rotation.z
@@ -3245,23 +3744,33 @@ plate2_name();
         } else if (dType === 'base') {
           activeDragTarget = {
             type: 'base',
-            mode: 'rotate',
+            mode: effectiveMode,
             mesh: baseGroup,
             startPlanePt: dragIntersectionPt.clone(),
-            startRot: state.baseRotation || 0
+            startRot: state.baseRotation || 0,
+            startSize: state.baseSize || 190
           };
         }
       });
 
       window.addEventListener('pointermove', (e) => {
         if (!activeDragTarget) {
-          // Hover feedback sutil de cursor quando passa sobre Nome ou Detalhe
+          // Hover feedback de cursor inteligente conforme a ferramenta ativa no Orbit
           if (renderer && renderer.domElement && e.target === renderer.domElement) {
             updatePointerNDC(e, domElem);
             raycaster.setFromCamera(pointerNDC, camera);
             const hits = raycaster.intersectObjects(getInteractiveMeshes(), false);
-            if (hits.length > 0 && (hits[0].object.userData.dragType !== 'base' || e.shiftKey)) {
-              domElem.style.cursor = e.shiftKey ? 'alias' : 'move';
+            if (hits.length > 0 && orbitToolMode !== 'camera') {
+              const hitType = hits[0].object.userData.dragType;
+              if (orbitToolMode === 'scale' || e.altKey) {
+                domElem.style.cursor = 'nwse-resize';
+              } else if (orbitToolMode === 'rotate' || e.shiftKey) {
+                domElem.style.cursor = 'alias';
+              } else if (hitType !== 'base') {
+                domElem.style.cursor = 'move';
+              } else {
+                domElem.style.cursor = 'grab';
+              }
             } else {
               domElem.style.cursor = 'grab';
             }
@@ -3276,36 +3785,53 @@ plate2_name();
         const dx = dragIntersectionPt.x - activeDragTarget.startPlanePt.x;
         const dy = dragIntersectionPt.y - activeDragTarget.startPlanePt.y;
         const halfLimit = Math.round(state.bedSizeMM * 0.44);
+        const currentMode = e.shiftKey ? 'rotate' : (e.altKey ? 'scale' : activeDragTarget.mode);
 
         if (activeDragTarget.type === 'name') {
-          if (activeDragTarget.mode === 'rotate' || e.shiftKey) {
+          if (currentMode === 'rotate') {
             const newRot = Math.max(-45, Math.min(45, Math.round(activeDragTarget.startRot + dx * 0.6)));
             state.nameRotation = newRot;
             syncSidebarControlsFromState();
-            showDragHud(`Inclinação do Nome: ${newRot}°`);
+            showDragHud(`Rotação do Nome: ${newRot}°`);
+            rebuild3DModel();
+          } else if (currentMode === 'scale') {
+            const scaleDelta = Math.round((dx + dy) * 0.8);
+            const newSize = Math.max(40, Math.min(240, activeDragTarget.startSize + scaleDelta));
+            state.nameSize = newSize;
+            syncSidebarControlsFromState();
+            showDragHud(`Tamanho do Nome: ${newSize} mm`);
             rebuild3DModel();
           } else {
             const newX = Math.max(-halfLimit, Math.min(halfLimit, Math.round(activeDragTarget.startX + dx)));
             const newY = Math.max(-halfLimit, Math.min(halfLimit, Math.round(activeDragTarget.startY + dy)));
             state.namePosX = newX;
             state.namePosY = newY;
-            // Feedback visual imediato na malha + atualização da cava booleana
             activeDragTarget.mesh.position.x = activeDragTarget.meshStartX + (newX - activeDragTarget.startX);
             activeDragTarget.mesh.position.y = activeDragTarget.meshStartY + (newY - activeDragTarget.startY);
             if (selectionBoxHelper) selectionBoxHelper.update();
             syncSidebarControlsFromState();
-            showDragHud(`Nome: X=${newX} mm, Y=${newY} mm`);
+            showDragHud(`Mover Nome: X=${newX} mm, Y=${newY} mm`);
             rebuild3DModel();
           }
         } else if (activeDragTarget.type === 'emblem') {
           const emb = state.emblems[activeDragTarget.emblemIndex];
           if (!emb) return;
-          if (activeDragTarget.mode === 'rotate' || e.shiftKey) {
+          if (currentMode === 'rotate') {
             const newRot = Math.max(-90, Math.min(90, Math.round(activeDragTarget.startRot + dx * 0.8)));
             emb.rot = newRot;
             const el = document.getElementById(`embRotVal_${activeDragTarget.emblemIndex}`);
             if (el) el.textContent = `${newRot}°`;
-            showDragHud(`Detalhe #${activeDragTarget.emblemIndex + 1} Rotação: ${newRot}°`);
+            refreshSelectedPartQuickHud();
+            showDragHud(`Girar Detalhe #${activeDragTarget.emblemIndex + 1}: ${newRot}°`);
+            rebuild3DModel();
+          } else if (currentMode === 'scale') {
+            const scaleDelta = Math.round((dx + dy) * 0.6);
+            const newSize = Math.max(15, Math.min(110, activeDragTarget.startSize + scaleDelta));
+            emb.size = newSize;
+            const elSize = document.getElementById(`embSizeVal_${activeDragTarget.emblemIndex}`);
+            if (elSize) elSize.textContent = `${newSize} mm`;
+            refreshSelectedPartQuickHud();
+            showDragHud(`Tamanho Detalhe #${activeDragTarget.emblemIndex + 1}: ${newSize} mm`);
             rebuild3DModel();
           } else {
             const newX = Math.max(-halfLimit, Math.min(halfLimit, Math.round(activeDragTarget.startX + dx)));
@@ -3317,17 +3843,27 @@ plate2_name();
             if (selectionBoxHelper) selectionBoxHelper.update();
             const elX = document.getElementById(`embXVal_${activeDragTarget.emblemIndex}`);
             const elY = document.getElementById(`embYVal_${activeDragTarget.emblemIndex}`);
-            if (elX) elX.textContent = `${newX} mm`;
-            if (elY) elY.textContent = `${newY} mm`;
-            showDragHud(`Detalhe #${activeDragTarget.emblemIndex + 1}: X=${newX} mm, Y=${newY} mm`);
+            if (elX) elX.textContent = `${newX}`;
+            if (elY) elY.textContent = `${newY}`;
+            showDragHud(`Mover Detalhe #${activeDragTarget.emblemIndex + 1}: X=${newX} mm, Y=${newY} mm`);
             rebuild3DModel();
           }
         } else if (activeDragTarget.type === 'base') {
-          const newRot = Math.max(-45, Math.min(45, Math.round(activeDragTarget.startRot + dx * 0.5)));
-          state.baseRotation = newRot;
-          syncSidebarControlsFromState();
-          showDragHud(`Rotação da Base: ${newRot}°`);
-          rebuild3DModel();
+          if (currentMode === 'scale') {
+            const profile = PRINTER_PROFILES[state.printerProfile] || PRINTER_PROFILES.kobra_x;
+            const scaleDelta = Math.round((dx + dy) * 0.8);
+            const newSize = Math.max(100, Math.min(profile.maxRecommendedLetter, activeDragTarget.startSize + scaleDelta));
+            state.baseSize = newSize;
+            syncSidebarControlsFromState();
+            showDragHud(`Tamanho da Letra Base: ${newSize} mm`);
+            rebuild3DModel();
+          } else {
+            const newRot = Math.max(-45, Math.min(45, Math.round(activeDragTarget.startRot + dx * 0.5)));
+            state.baseRotation = newRot;
+            syncSidebarControlsFromState();
+            showDragHud(`Rotação da Base: ${newRot}°`);
+            rebuild3DModel();
+          }
         }
       });
 
@@ -3448,10 +3984,12 @@ plate2_name();
       nameGroup = new THREE.Group();
       emblemGroup = new THREE.Group();
       plate3Group = new THREE.Group();
+      plate4Group = new THREE.Group();
       scene.add(baseGroup);
       scene.add(nameGroup);
       scene.add(emblemGroup);
       scene.add(plate3Group);
+      scene.add(plate4Group);
 
       // 6. Iluminação de Estúdio
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
